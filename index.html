@@ -5,66 +5,31 @@
     <title>Sistema de Controle de Autorização - Suprema</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        /* ESTILOS DE LOGIN */
-        #login-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #2c3e50; display: flex; justify-content: center; align-items: center; z-index: 9999;
-        }
-        .login-card {
-            background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            width: 100%; max-width: 350px; text-align: center;
-        }
-        .login-card h2 { margin-bottom: 20px; color: #2c3e50; }
-        .login-card input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        .btn-login { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-
-        /* ESTILOS DA INTERFACE */
+        /* ESTILOS BASE */
         :root { --primary: #2c3e50; --danger: #e74c3c; --success: #27ae60; --info: #3498db; }
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        .login-card { background: white; padding: 40px; border-radius: 10px; width: 100%; max-width: 350px; text-align: center; }
         #main-content { display: none; }
         .container { max-width: 1000px; margin: auto; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; text-decoration: none; display: inline-block; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; text-decoration: none; display: inline-block; }
         .btn-import { background: #8e44ad; }
-        .btn-help { background: #7f8c8d; font-size: 12px; margin-top: 5px; }
-        .btn-reg { background: var(--success); width: 100%; margin-top: 10px; }
-        .btn-print { background: var(--primary); font-size: 12px; }
-        .btn-link { background: var(--info); font-size: 13px; margin-top: 10px; }
+        .btn-reg { background: var(--success); width: 100%; margin-top: 15px; }
         
+        /* CAMPOS DE FORMULÁRIO */
+        input[type="text"], input[type="password"], textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; margin-top: 5px; font-family: inherit; }
+        .field-group { margin-top: 10px; text-align: left; }
+        .field-group label { font-weight: bold; font-size: 14px; color: var(--primary); }
+
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
         .status-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; }
         .critical { background: var(--danger); color: white; }
         
-        input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        #lista-sugestoes { border: 1px solid #ddd; border-radius: 4px; max-height: 200px; overflow-y: auto; display: none; background: white; position: absolute; width: 960px; z-index: 10; }
+        #lista-sugestoes { border: 1px solid #ddd; border-radius: 4px; max-height: 150px; overflow-y: auto; display: none; background: white; position: absolute; width: 960px; z-index: 10; }
         .item-sugestao { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
         .item-sugestao:hover { background: #f0f2f5; }
-
-        .ajuda-cadastro { margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 5px solid #ffc107; border-radius: 4px; display: none; }
-
-        /* ESTILOS DE IMPRESSÃO (A4 PAISAGEM) */
-        #area-impressao { display: none; }
-        @media print {
-            @page { size: landscape; margin: 1cm; }
-            body * { visibility: hidden; }
-            #area-impressao, #area-impressao * { visibility: visible; }
-            #area-impressao { display: block !important; position: absolute; left: 0; top: 0; width: 100%; font-family: "Times New Roman", serif; color: black; }
-            .page-break { page-break-before: always; }
-        }
-        .frente { width: 100%; }
-        .head-word { text-align: center; margin-bottom: 20px; }
-        .head-word p { margin: 2px 0; font-size: 16pt; font-weight: bold; }
-        .row-info { margin-bottom: 15px; font-size: 12pt; display: flex; gap: 50px; }
-        .tab-penalidade { width: 100%; border-collapse: collapse; margin: 15px 0; }
-        .tab-penalidade th, .tab-penalidade td { border: 1px solid black; padding: 8px; font-size: 10pt; text-align: center; }
-        .square { display: inline-block; width: 16px; height: 16px; border: 1px solid black; vertical-align: middle; line-height: 14px; font-weight: bold; }
-        .relato-box { border: 1px solid black; min-height: 140px; padding: 10px; margin-top: 5px; font-size: 11pt; text-align: justify; }
-        .footer-signs { margin-top: 50px; display: flex; justify-content: space-between; font-size: 9pt; text-align: center; }
-        .sign-line { width: 30%; border-top: 1px solid black; padding-top: 5px; }
-        .verso { width: 100%; padding-top: 30px; }
-        .titulo-ata { text-align: center; font-weight: bold; font-size: 16pt; text-decoration: underline; margin-bottom: 30px; }
-        .linha-ata { border-bottom: 1px solid black; height: 35px; margin-bottom: 5px; width: 100%; }
     </style>
 </head>
 <body>
@@ -74,116 +39,65 @@
         <h2>Acesso Restrito</h2>
         <input type="text" id="user" placeholder="Usuário">
         <input type="password" id="pass" placeholder="Senha">
-        <button class="btn-login" onclick="autenticar()">Entrar</button>
-        <p id="login-error" style="color:red; display:none; margin-top:10px; font-size:14px;">Usuário ou senha incorretos!</p>
+        <button class="btn" style="background: var(--success); width: 100%; margin-top: 10px;" onclick="autenticar()">Entrar</button>
+        <p id="login-error" style="color:red; display:none; margin-top:10px;">Acesso negado!</p>
     </div>
 </div>
 
-<div id="main-content" class="container no-print">
+<div id="main-content" class="container">
     <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-                <h2>🏥 Sistema de Controle de Autorização</h2>
-                <small>Gestão de Liberações Excepcionais - Clínica Odontológica</small>
-            </div>
-            <div style="text-align: right;">
-                <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📥 Importar Lista Alunos</button><br>
-                <a href="https://suprema.sharepoint.com/:x:/s/ClnicaOdonto/IQA9DWUTgucoQqfkhiMgGQ4QAd1yp_L1ktUKPBNr6AO_IEk?e=6OtV9N" target="_blank" class="btn btn-help">📄 Baixar Planilha Modelo</a>
-                <input type="file" id="fileInput" style="display:none" accept=".xlsx" onchange="importarPlanilha(event)">
-            </div>
+        <div style="display: flex; justify-content: space-between;">
+            <h2>🏥 Controle de Autorização</h2>
+            <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📥 Importar Alunos</button>
+            <input type="file" id="fileInput" style="display:none" accept=".xlsx" onchange="importarPlanilha(event)">
         </div>
     </div>
 
     <div class="card">
-        <h3>Nova Liberação Excepcional</h3>
-        <input type="text" id="inputBusca" placeholder="Pesquisar por nome ou matrícula..." onkeyup="filtrarAlunos(this.value)">
+        <h3>Nova Liberação</h3>
+        <input type="text" id="inputBusca" placeholder="Pesquisar aluno..." onkeyup="filtrarAlunos(this.value)">
         <div id="lista-sugestoes"></div>
-        
-        <div id="ajuda-cadastro" class="ajuda-cadastro">
-            <strong>Aluno não encontrado?</strong><br>
-            O aluno precisa ser cadastrado primeiro na lista oficial do Teams.<br>
-            1. Cadastre-o no link abaixo.<br>
-            2. Baixe a planilha atualizada e importe novamente no botão roxo acima.<br>
-            <a href="https://suprema.sharepoint.com/:x:/s/ClnicaOdonto/IQA9DWUTgucoQqfkhiMgGQ4QAd1yp_L1ktUKPBNr6AO_IEk?e=6OtV9N" target="_blank" class="btn btn-link">🔗 Abrir Planilha no Teams</a>
-        </div>
 
-        <div id="info-selecionado" style="display:none; margin-top:15px; padding:20px; background:#e8f4fd; border-left:5px solid #3498db; border-radius: 4px;">
-            <strong>Estudante:</strong> <span id="txt-nome"></span><br>
-            <strong>Período:</strong> <span id="txt-periodo"></span>º | <strong>Matrícula:</strong> <span id="txt-mat"></span>
-            <button class="btn btn-reg" onclick="registrarOcorrencia()">Confirmar Registro e Salvar com Data Atual</button>
+        <div id="info-selecionado" style="display:none; margin-top:15px; padding:20px; background:#e8f4fd; border-radius: 8px;">
+            <strong>Estudante:</strong> <span id="txt-nome"></span> (<span id="txt-mat"></span>)<br>
+            
+            <div class="field-group">
+                <label>Número do Protocolo:</label>
+                <input type="text" id="campo-protocolo" placeholder="Ex: 2024/ABC-123">
+            </div>
+
+            <div class="field-group">
+                <label>Observação:</label>
+                <textarea id="campo-obs" rows="2" placeholder="Motivo da liberação ou detalhes extras..."></textarea>
+            </div>
+
+            <button class="btn btn-reg" onclick="registrarOcorrencia()">Confirmar e Salvar na Planilha</button>
         </div>
     </div>
 
     <div class="card">
-        <h3>Histórico Consolidado (Google Sheets)</h3>
-        <table id="tabela-dashboard">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Período</th>
-                    <th>Qtd. Esquecimentos</th>
-                    <th>Status</th>
-                    <th>Ação</th>
-                </tr>
-            </thead>
-            <tbody id="corpo-tabela">
-                <tr><td colspan="5" style="text-align:center;">Sincronizando com a nuvem...</td></tr>
-            </tbody>
+        <h3>Histórico</h3>
+        <table>
+            <thead><tr><th>Nome</th><th>Período</th><th>Esquecimentos</th><th>Status</th></tr></thead>
+            <tbody id="corpo-tabela"></tbody>
         </table>
-    </div>
-</div>
-
-<div id="area-impressao">
-    <div class="frente">
-        <div class="head-word"><p>Faculdade de Ciências Médicas</p><p>e da Saúde de Juiz de Fora</p></div>
-        <div class="row-info"><strong>Nome do Estudante:</strong> <span id="p-nome"></span></div>
-        <div class="row-info"><div><strong>Curso:</strong> Odontologia</div><div><strong>Período:</strong> <span id="p-periodo"></span>º</div><div><strong>Data:</strong> <span id="p-data"></span></div></div>
-        <p style="text-align: center; font-weight: bold; font-size: 11pt; margin: 15px 0;">Indicação – MARQUE UM X A PENALIDADE E A FORMA DE APLICAÇÃO</p>
-        <table class="tab-penalidade">
-            <thead><tr><th>PENALIDADE</th><th>FORMA DE APLICAÇÃO</th><th>INDICAÇÃO</th><th>COMPETÊNCIA DE APLICAÇÃO</th></tr></thead>
-            <tbody>
-                <tr><td>Advertência</td><td>ORAL</td><td><div class="square"></div></td><td>Professores, Coordenadores, NADD e DEPE</td></tr>
-                <tr><td><strong>Repreensão</strong></td><td><strong>POR ESCRITO</strong></td><td><div class="square">X</div></td><td>Coordenadores, NADD, COEPE, DEPE, Direção Geral.</td></tr>
-                <tr><td>Suspensão</td><td>POR ESCRITO</td><td><div class="square"></div></td><td>Coordenadores, NADD, COEPE, DEPE, Diretor Geral.</td></tr>
-                <tr><td>Desligamento</td><td>POR ESCRITO</td><td><div class="square"></div></td><td>1ª inst. Colegiado; 2ª inst. CEPE e Direção</td></tr>
-            </tbody>
-        </table>
-        <div><strong>RELATO DO CASO:</strong></div>
-        <div class="relato-box">O estudante acima identificado atingiu o limite de 03 (três) liberações excepcionais de material/instrumental por motivo de esquecimento de protocolo de autorização. Conforme as normas da Clínica Odontológica, a reincidência resulta na aplicação desta penalidade formal por escrito.</div>
-        <p style="margin-top: 30px;">Juiz de Fora, <span id="p-data-footer"></span></p>
-        <div class="footer-signs"><div class="sign-line">Estudante (s)</div><div class="sign-line">Coordenador de Curso</div><div class="sign-line">Responsável pela Aplicação</div></div>
-        <p style="text-align: center; font-size: 8pt; margin-top: 40px; font-weight: bold;">FORMULÁRIO PARA APLICAÇÃO OU ENCAMINHAMENTO DE ADVERTÊNCIA/REPREENSÃO AOS ESTUDANTES</p>
-    </div>
-    <div class="verso page-break">
-        <div class="titulo-ata">ATA DE ATENDIMENTO AO ESTUDANTE</div>
-        <div style="margin-bottom: 25px; font-size: 12pt;"><strong>Estudante:</strong> <span id="v-nome">_____________________________________________________________</span></div>
-        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
-        <div style="margin-top: 70px; display: flex; justify-content: space-around;"><div class="sign-line" style="width: 40%;">Assinatura do Estudante</div><div class="sign-line" style="width: 40%;">Assinatura do Responsável</div></div>
     </div>
 </div>
 
 <script>
-    // --- CREDENCIAIS ---
-    const users = {
-        "Diana": "246811",
-        "Claus": "Cl@86372"
-    };
-
-    const URL_API = "https://script.google.com/macros/s/AKfycbxK5CJiIcfQJzJ_ZY1PKnowRTliCpVzq5Zo7VGM20mXl3k0ptWrrGc6UN8c0VOVcpezeQ/exec";
+    const users = { "Diana": "246811", "Claus": "Cl@86372" };
+    const URL_API = "https://script.google.com/macros/s/SEU_NOVO_ID_AQUI/exec";
 
     function autenticar() {
         const u = document.getElementById('user').value.trim();
         const s = document.getElementById('pass').value.trim();
-        if (users[u] && users[u] === s) {
+        if (users[u] === s) {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
             carregarDados();
-        } else {
-            document.getElementById('login-error').style.display = 'block';
-        }
+        } else { document.getElementById('login-error').style.display = 'block'; }
     }
 
-    // --- LOGICA DE DADOS ---
     let alunosBase = JSON.parse(localStorage.getItem('base_alunos')) || [];
     let ocorrencias = [];
     let selecionado = null;
@@ -193,85 +107,48 @@
             const res = await fetch(URL_API);
             ocorrencias = await res.json();
             renderDashboard();
-        } catch (e) { 
-            console.error("Erro ao carregar dados do Google Sheets", e); 
-        }
-    }
-
-    function importarPlanilha(event) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type: 'array'});
-            const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-            alunosBase = json.map(i => ({ 
-                nome: i.Nome || i.NOME || i.nome, 
-                matricula: i.Matrícula || i.MATRICULA || i.matricula, 
-                periodo: i.Período || i.PERIODO || i.periodo 
-            }));
-            localStorage.setItem('base_alunos', JSON.stringify(alunosBase));
-            alert("Lista de alunos importada e salva localmente!");
-        };
-        reader.readAsArrayBuffer(event.target.files[0]);
+        } catch (e) { console.error(e); }
     }
 
     function filtrarAlunos(t) {
         const lista = document.getElementById('lista-sugestoes');
-        const ajuda = document.getElementById('ajuda-cadastro');
-        const info = document.getElementById('info-selecionado');
-        
-        if (t.length < 2) { 
-            lista.style.display = 'none'; ajuda.style.display = 'none'; return; 
-        }
-
-        const f = alunosBase.filter(a => a.nome && a.nome.toLowerCase().includes(t.toLowerCase())).slice(0, 5);
-        
-        if (f.length === 0) {
-            lista.style.display = 'none'; ajuda.style.display = 'block'; info.style.display = 'none';
-        } else {
-            ajuda.style.display = 'none';
-            lista.innerHTML = f.map(a => `<div class="item-sugestao" onclick="selecionar('${a.nome}', '${a.periodo}', '${a.matricula}')">${a.nome} (${a.periodo}º)</div>`).join('');
-            lista.style.display = 'block';
-        }
+        if (t.length < 2) { lista.style.display = 'none'; return; }
+        const f = alunosBase.filter(a => a.nome.toLowerCase().includes(t.toLowerCase())).slice(0, 5);
+        lista.innerHTML = f.map(a => `<div class="item-sugestao" onclick="selecionar('${a.nome}', '${a.periodo}', '${a.matricula}')">${a.nome}</div>`).join('');
+        lista.style.display = 'block';
     }
 
     function selecionar(n, p, m) {
         selecionado = { nome: n, periodo: p, matricula: m };
         document.getElementById('txt-nome').innerText = n;
-        document.getElementById('txt-periodo').innerText = p;
         document.getElementById('txt-mat').innerText = m;
         document.getElementById('info-selecionado').style.display = 'block';
         document.getElementById('lista-sugestoes').style.display = 'none';
-        document.getElementById('inputBusca').value = n;
     }
 
     async function registrarOcorrencia() {
-        if(!selecionado) return;
+        const prot = document.getElementById('campo-protocolo').value;
+        const obs = document.getElementById('campo-obs').value;
         const btn = document.querySelector('.btn-reg');
-        btn.disabled = true; 
-        btn.innerText = "⏳ Enviando para a planilha...";
-
-        // Geração da Data e Hora do Registro
-        const agora = new Date();
-        const dataFormatada = agora.toLocaleDateString('pt-BR') + " " + agora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+        
+        btn.disabled = true; btn.innerText = "⏳ Gravando...";
+        
+        const payload = {
+            ...selecionado,
+            data: new Date().toLocaleString('pt-BR'),
+            protocolo: prot,
+            observacao: obs
+        };
 
         try {
-            await fetch(URL_API, { 
-                method: 'POST', 
-                body: JSON.stringify({ ...selecionado, data: dataFormatada }) 
-            });
-            alert("Registro realizado com sucesso!");
+            await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
+            alert("Registrado com sucesso!");
             location.reload();
-        } catch (e) { 
-            alert("Falha na conexão com o Google Sheets. Verifique a internet."); 
-            btn.disabled = false; 
-            btn.innerText = "Confirmar Registro e Salvar com Data Atual";
-        }
+        } catch (e) { alert("Erro ao salvar."); btn.disabled = false; }
     }
 
     function renderDashboard() {
         const corpo = document.getElementById('corpo-tabela');
-        if (!ocorrencias.length) { corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum registro encontrado na nuvem.</td></tr>'; return; }
         corpo.innerHTML = '';
         const contagem = {};
         ocorrencias.forEach(o => {
@@ -284,19 +161,21 @@
             corpo.innerHTML += `<tr>
                 <td>${d.nome}</td><td>${d.per}º</td><td>${d.total}</td>
                 <td><span class="status-badge ${isCrit?'critical':''}">${isCrit?'ADVERTÊNCIA':'Normal'}</span></td>
-                <td>${isCrit ? `<button class="btn btn-print" onclick="imprimirDoc('${d.nome}', '${d.per}')">🖨️ Gerar PDF</button>` : '-'}</td>
             </tr>`;
         });
     }
 
-    function imprimirDoc(n, p) {
-        const hoje = new Date().toLocaleDateString('pt-BR');
-        document.getElementById('p-nome').innerText = n; 
-        document.getElementById('v-nome').innerText = n;
-        document.getElementById('p-periodo').innerText = p; 
-        document.getElementById('p-data').innerText = hoje;
-        document.getElementById('p-data-footer').innerText = hoje;
-        window.print();
+    function importarPlanilha(event) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, {type: 'array'});
+            const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+            alunosBase = json.map(i => ({ nome: i.Nome || i.NOME, matricula: i.Matrícula || i.MATRICULA, periodo: i.Período || i.PERIODO }));
+            localStorage.setItem('base_alunos', JSON.stringify(alunosBase));
+            alert("Alunos importados!");
+        };
+        reader.readAsArrayBuffer(event.target.files[0]);
     }
 </script>
 </body>
