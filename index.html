@@ -195,7 +195,273 @@
     
     let alunosBase = JSON.parse(localStorage.getItem('base_alunos')) || [];
     let ocorrencias = [];
+    let selecionado = null;<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Controle de Autorização - Suprema</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* ESTILOS DA INTERFACE (SISTEMA) */
+        :root { --primary: #2c3e50; --danger: #e74c3c; --success: #27ae60; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
+        .btn-import { background: #8e44ad; }
+        .btn-reg { background: var(--success); width: 100%; margin-top: 10px; }
+        .btn-print { background: var(--primary); font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .critical { background: var(--danger); color: white; }
+        input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        #lista-sugestoes { border: 1px solid #ddd; border-radius: 4px; max-height: 200px; overflow-y: auto; display: none; background: white; position: absolute; width: 960px; z-index: 10; }
+        .item-sugestao { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .item-sugestao:hover { background: #f0f2f5; }
+
+        /* AJUSTES DE IMPRESSÃO - PAISAGEM E VERSO */
+        #area-impressao { display: none; }
+
+        @media print {
+            @page { size: landscape; margin: 1cm; }
+            body * { visibility: hidden; }
+            #area-impressao, #area-impressao * { visibility: visible; }
+            #area-impressao { 
+                display: block !important;
+                position: absolute; left: 0; top: 0; width: 100%;
+                font-family: "Times New Roman", Times, serif;
+                color: black;
+            }
+            .page-break { page-break-before: always; }
+            .no-print { display: none; }
+        }
+
+        .frente { width: 100%; height: 100%; }
+        .head-word { text-align: center; margin-bottom: 20px; }
+        .head-word p { margin: 2px 0; font-size: 16pt; font-weight: bold; }
+        .row-info { margin-bottom: 15px; font-size: 12pt; display: flex; gap: 50px; }
+        .tab-penalidade { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .tab-penalidade th, .tab-penalidade td { border: 1px solid black; padding: 8px; font-size: 10pt; text-align: center; }
+        .square { display: inline-block; width: 16px; height: 16px; border: 1px solid black; vertical-align: middle; line-height: 14px; font-weight: bold; }
+        .relato-box { border: 1px solid black; min-height: 140px; padding: 10px; margin-top: 5px; font-size: 11pt; text-align: justify; }
+        .footer-signs { margin-top: 50px; display: flex; justify-content: space-between; font-size: 9pt; text-align: center; }
+        .sign-line { width: 30%; border-top: 1px solid black; padding-top: 5px; }
+
+        .verso { width: 100%; padding-top: 30px; }
+        .titulo-ata { text-align: center; font-weight: bold; font-size: 16pt; text-decoration: underline; margin-bottom: 30px; }
+        .linha-ata { border-bottom: 1px solid black; height: 35px; margin-bottom: 5px; width: 100%; }
+    </style>
+</head>
+<body>
+
+<div class="container no-print">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>🏥 Sistema de Controle de Autorização</h2>
+            <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📥 Importar Lista Alunos</button>
+            <input type="file" id="fileInput" style="display:none" accept=".xlsx" onchange="importarPlanilha(event)">
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Nova Liberação Excepcional</h3>
+        <input type="text" id="inputBusca" placeholder="Pesquisar por nome ou matrícula..." onkeyup="filtrarAlunos(this.value)">
+        <div id="lista-sugestoes"></div>
+        
+        <div id="info-selecionado" style="display:none; margin-top:15px; padding:20px; background:#e8f4fd; border-left:5px solid #3498db; border-radius: 4px;">
+            <strong>Estudante:</strong> <span id="txt-nome"></span><br>
+            <strong>Período:</strong> <span id="txt-periodo"></span>º | <strong>Matrícula:</strong> <span id="txt-mat"></span>
+            <button class="btn btn-reg" onclick="registrarOcorrencia()">Confirmar Registro e Salvar na Nuvem</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Histórico de Ocorrências (Google Sheets)</h3>
+        <table id="tabela-dashboard">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Período</th>
+                    <th>Ocorrências</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody id="corpo-tabela">
+                <tr><td colspan="5" style="text-align:center;">Carregando dados da planilha...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="area-impressao">
+    <div class="frente">
+        <div class="head-word">
+            <p>Faculdade de Ciências Médicas</p>
+            <p>e da Saúde de Juiz de Fora</p>
+        </div>
+        <div class="row-info"><strong>Nome do Estudante:</strong> <span id="p-nome"></span></div>
+        <div class="row-info">
+            <div><strong>Curso:</strong> Odontologia</div>
+            <div><strong>Período:</strong> <span id="p-periodo"></span>º</div>
+            <div><strong>Data:</strong> <span id="p-data"></span></div>
+        </div>
+        <p style="text-align: center; font-weight: bold; font-size: 11pt; margin: 15px 0;">Indicação – MARQUE UM X A PENALIDADE E A FORMA DE APLICAÇÃO</p>
+        <table class="tab-penalidade">
+            <thead>
+                <tr>
+                    <th>PENALIDADE</th>
+                    <th>FORMA DE APLICAÇÃO</th>
+                    <th>INDICAÇÃO</th>
+                    <th>COMPETÊNCIA DE APLICAÇÃO</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Advertência</td><td>ORAL</td><td><div class="square"></div></td><td>Professores, Coordenadores, NADD e DEPE</td></tr>
+                <tr><td><strong>Repreensão</strong></td><td><strong>POR ESCRITO</strong></td><td><div class="square">X</div></td><td>Coordenadores, NADD, COEPE, DEPE, Direção Geral.</td></tr>
+                <tr><td>Suspensão</td><td>POR ESCRITO</td><td><div class="square"></div></td><td>Coordenadores, NADD, COEPE, DEPE, Diretor Geral.</td></tr>
+                <tr><td>Desligamento</td><td>POR ESCRITO</td><td><div class="square"></div></td><td>1ª inst. Colegiado; 2ª inst. CEPE e Direção</td></tr>
+            </tbody>
+        </table>
+        <div><strong>RELATO DO CASO:</strong></div>
+        <div class="relato-box">O estudante acima identificado atingiu o limite de 03 (três) liberações excepcionais de material/instrumental por motivo de esquecimento de protocolo de autorização. Conforme as normas da Clínica Odontológica, a reincidência resulta na aplicação desta penalidade formal por escrito.</div>
+        <p style="margin-top: 30px;">Juiz de Fora, <span id="p-data-footer"></span></p>
+        <div class="footer-signs">
+            <div class="sign-line">Estudante (s)</div>
+            <div class="sign-line">Coordenador de Curso</div>
+            <div class="sign-line">Responsável pela Aplicação</div>
+        </div>
+        <p style="text-align: center; font-size: 8pt; margin-top: 40px; font-weight: bold;">FORMULÁRIO PARA APLICAÇÃO OU ENCAMINHAMENTO DE ADVERTÊNCIA/REPREENSÃO AOS ESTUDANTES</p>
+    </div>
+
+    <div class="verso page-break">
+        <div class="titulo-ata">ATA DE ATENDIMENTO AO ESTUDANTE</div>
+        <div style="margin-bottom: 25px; font-size: 12pt;"><strong>Estudante:</strong> <span id="v-nome">_____________________________________________________________</span></div>
+        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
+        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
+        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
+        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
+        <div style="margin-top: 70px; display: flex; justify-content: space-around;">
+            <div class="sign-line" style="width: 40%;">Assinatura do Estudante</div>
+            <div class="sign-line" style="width: 40%;">Assinatura do Responsável</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- URL CONFIGURADA ---
+    const URL_API = "https://script.google.com/macros/s/AKfycbxK5CJiIcfQJzJ_ZY1PKnowRTliCpVzq5Zo7VGM20mXl3k0ptWrrGc6UN8c0VOVcpezeQ/exec";
+    
+    let alunosBase = JSON.parse(localStorage.getItem('base_alunos')) || [];
+    let ocorrencias = [];
     let selecionado = null;
+
+    async function carregarDados() {
+        try {
+            const res = await fetch(URL_API);
+            ocorrencias = await res.json();
+            renderDashboard();
+        } catch (e) {
+            console.error("Erro ao carregar dados:", e);
+            document.getElementById('corpo-tabela').innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Erro ao conectar com o Google Sheets. Verifique a conexão.</td></tr>';
+        }
+    }
+
+    function importarPlanilha(event) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(sheet);
+            alunosBase = json.map(item => ({
+                nome: item.Nome || item.NOME || item.nome,
+                matricula: item.Matrícula || item.MATRICULA || item.matricula,
+                periodo: item.Período || item.PERIODO || item.periodo
+            }));
+            localStorage.setItem('base_alunos', JSON.stringify(alunosBase));
+            alert("Lista de alunos importada com sucesso!");
+        };
+        reader.readAsArrayBuffer(event.target.files[0]);
+    }
+
+    function filtrarAlunos(t) {
+        const lista = document.getElementById('lista-sugestoes');
+        if (t.length < 2) { lista.style.display = 'none'; return; }
+        const f = alunosBase.filter(a => a.nome && a.nome.toLowerCase().includes(t.toLowerCase())).slice(0, 5);
+        lista.innerHTML = f.map(a => `<div class="item-sugestao" onclick="selecionar('${a.nome}', '${a.periodo}', '${a.matricula}')">${a.nome} (${a.periodo}º)</div>`).join('');
+        lista.style.display = 'block';
+    }
+
+    function selecionar(n, p, m) {
+        selecionado = { nome: n, periodo: p, matricula: m };
+        document.getElementById('txt-nome').innerText = n;
+        document.getElementById('txt-periodo').innerText = p;
+        document.getElementById('txt-mat').innerText = m;
+        document.getElementById('info-selecionado').style.display = 'block';
+        document.getElementById('lista-sugestoes').style.display = 'none';
+        document.getElementById('inputBusca').value = n;
+    }
+
+    async function registrarOcorrencia() {
+        if(!selecionado) return;
+        const pld = { ...selecionado, data: new Date().toLocaleDateString('pt-BR') };
+        const btn = document.querySelector('.btn-reg');
+        btn.disabled = true;
+        btn.innerText = "⏳ Gravando na nuvem...";
+        
+        try {
+            await fetch(URL_API, { method: 'POST', body: JSON.stringify(pld) });
+            alert("Sucesso! Registro salvo no Google Sheets.");
+            location.reload();
+        } catch (e) {
+            alert("Erro ao salvar. Tente novamente.");
+            btn.disabled = false;
+            btn.innerText = "Confirmar Registro e Salvar na Nuvem";
+        }
+    }
+
+    function renderDashboard() {
+        const corpo = document.getElementById('corpo-tabela');
+        if (!ocorrencias || ocorrencias.length === 0) {
+            corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma ocorrência registrada ainda.</td></tr>';
+            return;
+        }
+        corpo.innerHTML = '';
+        const contagem = {};
+        ocorrencias.forEach(o => {
+            const key = o.matricula || o.nome;
+            contagem[key] = contagem[key] || { nome: o.nome, per: o.periodo, total: 0 };
+            contagem[key].total++;
+        });
+
+        Object.entries(contagem).forEach(([key, dados]) => {
+            const isCrit = dados.total >= 3;
+            corpo.innerHTML += `<tr>
+                <td>${dados.nome}</td>
+                <td>${dados.per}º</td>
+                <td>${dados.total}</td>
+                <td><span class="status-badge ${isCrit?'critical':''}">${isCrit?'ADVERTÊNCIA':'Normal'}</span></td>
+                <td>${isCrit ? `<button class="btn btn-print" onclick="imprimirDoc('${dados.nome}', '${dados.per}')">🖨️ Imprimir</button>` : '-'}</td>
+            </tr>`;
+        });
+    }
+
+    function imprimirDoc(n, p) {
+        const hoje = new Date().toLocaleDateString('pt-BR');
+        document.getElementById('p-nome').innerText = n;
+        document.getElementById('v-nome').innerText = n;
+        document.getElementById('p-periodo').innerText = p;
+        document.getElementById('p-data').innerText = hoje;
+        document.getElementById('p-data-footer').innerText = hoje;
+        window.print();
+    }
+
+    carregarDados();
+</script>
+</body>
+</html>
 
     // Carrega dados da nuvem ao abrir
     async function carregarDados() {
