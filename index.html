@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Sistema de Controle de Autorização - Suprema</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         /* ESTILOS DE LOGIN */
         #login-screen {
@@ -19,23 +20,29 @@
         .btn-login { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
 
         /* ESTILOS DA INTERFACE (SISTEMA) */
-        :root { --primary: #2c3e50; --danger: #e74c3c; --success: #27ae60; }
+        :root { --primary: #2c3e50; --danger: #e74c3c; --success: #27ae60; --info: #3498db; }
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
-        #main-content { display: none; } /* Escondido até o login */
+        #main-content { display: none; }
         .container { max-width: 1000px; margin: auto; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; text-decoration: none; display: inline-block; }
         .btn-import { background: #8e44ad; }
+        .btn-help { background: #7f8c8d; font-size: 12px; margin-top: 5px; }
         .btn-reg { background: var(--success); width: 100%; margin-top: 10px; }
         .btn-print { background: var(--primary); font-size: 12px; }
+        .btn-link { background: var(--info); font-size: 13px; margin-top: 10px; }
+        
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
         .status-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; }
         .critical { background: var(--danger); color: white; }
+        
         input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
         #lista-sugestoes { border: 1px solid #ddd; border-radius: 4px; max-height: 200px; overflow-y: auto; display: none; background: white; position: absolute; width: 960px; z-index: 10; }
         .item-sugestao { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
         .item-sugestao:hover { background: #f0f2f5; }
+
+        .ajuda-cadastro { margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 5px solid #ffc107; border-radius: 4px; display: none; }
 
         /* IMPRESSÃO */
         #area-impressao { display: none; }
@@ -69,16 +76,21 @@
         <input type="text" id="user" placeholder="Usuário">
         <input type="password" id="pass" placeholder="Senha">
         <button class="btn-login" onclick="autenticar()">Entrar</button>
-        <p id="login-error" style="color:red; display:none; margin-top:10px; font-size:14px;">Usuário ou senha incorretos!</p>
+        <p id="login-error" style="color:red; display:none; margin-top:10px; font-size:14px;">Acesso negado!</p>
     </div>
 </div>
 
 <div id="main-content" class="container no-print">
     <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2>🏥 Sistema de Controle de Autorização</h2>
-            <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📥 Importar Lista Alunos</button>
-            <input type="file" id="fileInput" style="display:none" accept=".xlsx" onchange="importarPlanilha(event)">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <h2>🏥 Sistema de Controle de Autorização</h2>
+            </div>
+            <div style="text-align: right;">
+                <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📥 Importar Lista Alunos</button><br>
+                <a href="https://suprema.sharepoint.com/:x:/s/ClnicaOdonto/IQA9DWUTgucoQqfkhiMgGQ4QAd1yp_L1ktUKPBNr6AO_IEk?e=6OtV9N" target="_blank" class="btn btn-help">📄 Não tem a planilha? Baixe aqui</a>
+                <input type="file" id="fileInput" style="display:none" accept=".xlsx" onchange="importarPlanilha(event)">
+            </div>
         </div>
     </div>
 
@@ -86,6 +98,15 @@
         <h3>Nova Liberação Excepcional</h3>
         <input type="text" id="inputBusca" placeholder="Pesquisar por nome ou matrícula..." onkeyup="filtrarAlunos(this.value)">
         <div id="lista-sugestoes"></div>
+        
+        <div id="ajuda-cadastro" class="ajuda-cadastro">
+            <strong>Aluno não encontrado?</strong><br>
+            1. Acesse a planilha mestre no Teams pelo link abaixo.<br>
+            2. Cadastre o novo aluno na lista oficial.<br>
+            3. Baixe a planilha atualizada e importe-a novamente neste sistema.<br>
+            <a href="https://suprema.sharepoint.com/:x:/s/ClnicaOdonto/IQA9DWUTgucoQqfkhiMgGQ4QAd1yp_L1ktUKPBNr6AO_IEk?e=6OtV9N" target="_blank" class="btn btn-link">🔗 Acessar Planilha no Teams</a>
+        </div>
+
         <div id="info-selecionado" style="display:none; margin-top:15px; padding:20px; background:#e8f4fd; border-left:5px solid #3498db; border-radius: 4px;">
             <strong>Estudante:</strong> <span id="txt-nome"></span><br>
             <strong>Período:</strong> <span id="txt-periodo"></span>º | <strong>Matrícula:</strong> <span id="txt-mat"></span>
@@ -142,13 +163,19 @@
 </div>
 
 <script>
-    // --- SEGURANÇA ---
-    const credenciais = { "Diana": "246811", "Claus": "Cl@86372" };
+    // --- SEGURANÇA (HASHING) ---
+    const accessDB = {
+        "Diana": "606d092008890989f63544f86d9ed9f57df3f954752c4a921d78215570258038",
+        "Claus": "d3a4362140c83a7c645b90f5451c890947ba94a53e414c7188177699709a3182"
+    };
+
+    const URL_API = "https://script.google.com/macros/s/AKfycbxK5CJiIcfQJzJ_ZY1PKnowRTliCpVzq5Zo7VGM20mXl3k0ptWrrGc6UN8c0VOVcpezeQ/exec";
 
     function autenticar() {
         const u = document.getElementById('user').value;
         const s = document.getElementById('pass').value;
-        if (credenciais[u] && credenciais[u] === s) {
+        const hash = CryptoJS.SHA256(s).toString();
+        if (accessDB[u] && accessDB[u] === hash) {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
             carregarDados();
@@ -158,7 +185,6 @@
     }
 
     // --- LÓGICA DO SISTEMA ---
-    const URL_API = "https://script.google.com/macros/s/AKfycbxK5CJiIcfQJzJ_ZY1PKnowRTliCpVzq5Zo7VGM20mXl3k0ptWrrGc6UN8c0VOVcpezeQ/exec";
     let alunosBase = JSON.parse(localStorage.getItem('base_alunos')) || [];
     let ocorrencias = [];
     let selecionado = null;
@@ -176,25 +202,40 @@
         reader.onload = (e) => {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const json = XLSX.utils.sheet_to_json(sheet);
-            alunosBase = json.map(item => ({
-                nome: item.Nome || item.NOME || item.nome,
-                matricula: item.Matrícula || item.MATRICULA || item.matricula,
-                periodo: item.Período || item.PERIODO || item.periodo
+            const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            alunosBase = json.map(i => ({ 
+                nome: i.Nome || i.NOME || i.nome, 
+                matricula: i.Matrícula || i.MATRICULA || i.matricula, 
+                periodo: i.Período || i.PERIODO || i.periodo 
             }));
             localStorage.setItem('base_alunos', JSON.stringify(alunosBase));
-            alert("Lista de alunos importada!");
+            alert("Lista de alunos importada com sucesso!");
         };
         reader.readAsArrayBuffer(event.target.files[0]);
     }
 
     function filtrarAlunos(t) {
         const lista = document.getElementById('lista-sugestoes');
-        if (t.length < 2) { lista.style.display = 'none'; return; }
+        const ajuda = document.getElementById('ajuda-cadastro');
+        const info = document.getElementById('info-selecionado');
+        
+        if (t.length < 2) { 
+            lista.style.display = 'none'; 
+            ajuda.style.display = 'none';
+            return; 
+        }
+
         const f = alunosBase.filter(a => a.nome && a.nome.toLowerCase().includes(t.toLowerCase())).slice(0, 5);
-        lista.innerHTML = f.map(a => `<div class="item-sugestao" onclick="selecionar('${a.nome}', '${a.periodo}', '${a.matricula}')">${a.nome} (${a.periodo}º)</div>`).join('');
-        lista.style.display = 'block';
+        
+        if (f.length === 0) {
+            lista.style.display = 'none';
+            ajuda.style.display = 'block';
+            info.style.display = 'none';
+        } else {
+            ajuda.style.display = 'none';
+            lista.innerHTML = f.map(a => `<div class="item-sugestao" onclick="selecionar('${a.nome}', '${a.periodo}', '${a.matricula}')">${a.nome} (${a.periodo}º)</div>`).join('');
+            lista.style.display = 'block';
+        }
     }
 
     function selecionar(n, p, m) {
@@ -211,9 +252,8 @@
         if(!selecionado) return;
         const btn = document.querySelector('.btn-reg');
         btn.disabled = true; btn.innerText = "⏳ Gravando na nuvem...";
-        const pld = { ...selecionado, data: new Date().toLocaleDateString('pt-BR') };
         try {
-            await fetch(URL_API, { method: 'POST', body: JSON.stringify(pld) });
+            await fetch(URL_API, { method: 'POST', body: JSON.stringify({ ...selecionado, data: new Date().toLocaleDateString('pt-BR') }) });
             alert("Sucesso! Registro salvo.");
             location.reload();
         } catch (e) { alert("Erro ao salvar."); btn.disabled = false; }
@@ -221,32 +261,29 @@
 
     function renderDashboard() {
         const corpo = document.getElementById('corpo-tabela');
-        if (!ocorrencias || ocorrencias.length === 0) {
-            corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma ocorrência registrada.</td></tr>';
-            return;
-        }
+        if (!ocorrencias.length) { corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma ocorrência.</td></tr>'; return; }
         corpo.innerHTML = '';
         const contagem = {};
         ocorrencias.forEach(o => {
-            const key = o.matricula || o.nome;
-            contagem[key] = contagem[key] || { nome: o.nome, per: o.periodo, total: 0 };
-            contagem[key].total++;
+            const k = o.matricula || o.nome;
+            contagem[k] = contagem[k] || { nome: o.nome, per: o.periodo, total: 0 };
+            contagem[k].total++;
         });
-        Object.entries(contagem).forEach(([key, dados]) => {
-            const isCrit = dados.total >= 3;
+        Object.values(contagem).forEach(d => {
+            const isCrit = d.total >= 3;
             corpo.innerHTML += `<tr>
-                <td>${dados.nome}</td><td>${dados.per}º</td><td>${dados.total}</td>
+                <td>${d.nome}</td><td>${d.per}º</td><td>${d.total}</td>
                 <td><span class="status-badge ${isCrit?'critical':''}">${isCrit?'ADVERTÊNCIA':'Normal'}</span></td>
-                <td>${isCrit ? `<button class="btn btn-print" onclick="imprimirDoc('${dados.nome}', '${dados.per}')">🖨️ Imprimir</button>` : '-'}</td>
+                <td>${isCrit ? `<button class="btn btn-print" onclick="imprimirDoc('${d.nome}', '${d.per}')">🖨️ Imprimir</button>` : '-'}</td>
             </tr>`;
         });
     }
 
     function imprimirDoc(n, p) {
-        const hoje = new Date().toLocaleDateString('pt-BR');
+        const h = new Date().toLocaleDateString('pt-BR');
         document.getElementById('p-nome').innerText = n; document.getElementById('v-nome').innerText = n;
-        document.getElementById('p-periodo').innerText = p; document.getElementById('p-data').innerText = hoje;
-        document.getElementById('p-data-footer').innerText = hoje;
+        document.getElementById('p-periodo').innerText = p; document.getElementById('p-data').innerText = h;
+        document.getElementById('p-data-footer').innerText = h;
         window.print();
     }
 </script>
