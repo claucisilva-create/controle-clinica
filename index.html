@@ -18,7 +18,7 @@
         .login-card input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
         .btn-login { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
 
-        /* ESTILOS DA INTERFACE (SISTEMA) */
+        /* ESTILOS DA INTERFACE */
         :root { --primary: #2c3e50; --danger: #e74c3c; --success: #27ae60; --info: #3498db; }
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
         #main-content { display: none; }
@@ -43,7 +43,7 @@
 
         .ajuda-cadastro { margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 5px solid #ffc107; border-radius: 4px; display: none; }
 
-        /* IMPRESSÃO */
+        /* ESTILOS DE IMPRESSÃO (A4 PAISAGEM) */
         #area-impressao { display: none; }
         @media print {
             @page { size: landscape; margin: 1cm; }
@@ -84,10 +84,11 @@
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
                 <h2>🏥 Sistema de Controle de Autorização</h2>
+                <small>Gestão de Liberações Excepcionais - Clínica Odontológica</small>
             </div>
             <div style="text-align: right;">
                 <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📥 Importar Lista Alunos</button><br>
-                <a href="https://suprema.sharepoint.com/:x:/s/ClnicaOdonto/IQA9DWUTgucoQqfkhiMgGQ4QAd1yp_L1ktUKPBNr6AO_IEk?e=6OtV9N" target="_blank" class="btn btn-help">📄 Não tem a planilha? Baixe aqui</a>
+                <a href="https://suprema.sharepoint.com/:x:/s/ClnicaOdonto/IQA9DWUTgucoQqfkhiMgGQ4QAd1yp_L1ktUKPBNr6AO_IEk?e=6OtV9N" target="_blank" class="btn btn-help">📄 Baixar Planilha Modelo</a>
                 <input type="file" id="fileInput" style="display:none" accept=".xlsx" onchange="importarPlanilha(event)">
             </div>
         </div>
@@ -100,33 +101,33 @@
         
         <div id="ajuda-cadastro" class="ajuda-cadastro">
             <strong>Aluno não encontrado?</strong><br>
-            1. Acesse a planilha mestre no Teams pelo link abaixo.<br>
-            2. Cadastre o novo aluno na lista oficial.<br>
-            3. Baixe a planilha atualizada e importe-a novamente neste sistema.<br>
-            <a href="https://suprema.sharepoint.com/:x:/s/ClnicaOdonto/IQA9DWUTgucoQqfkhiMgGQ4QAd1yp_L1ktUKPBNr6AO_IEk?e=6OtV9N" target="_blank" class="btn btn-link">🔗 Acessar Planilha no Teams</a>
+            O aluno precisa ser cadastrado primeiro na lista oficial do Teams.<br>
+            1. Cadastre-o no link abaixo.<br>
+            2. Baixe a planilha atualizada e importe novamente no botão roxo acima.<br>
+            <a href="https://suprema.sharepoint.com/:x:/s/ClnicaOdonto/IQA9DWUTgucoQqfkhiMgGQ4QAd1yp_L1ktUKPBNr6AO_IEk?e=6OtV9N" target="_blank" class="btn btn-link">🔗 Abrir Planilha no Teams</a>
         </div>
 
         <div id="info-selecionado" style="display:none; margin-top:15px; padding:20px; background:#e8f4fd; border-left:5px solid #3498db; border-radius: 4px;">
             <strong>Estudante:</strong> <span id="txt-nome"></span><br>
             <strong>Período:</strong> <span id="txt-periodo"></span>º | <strong>Matrícula:</strong> <span id="txt-mat"></span>
-            <button class="btn btn-reg" onclick="registrarOcorrencia()">Confirmar Registro e Salvar na Nuvem</button>
+            <button class="btn btn-reg" onclick="registrarOcorrencia()">Confirmar Registro e Salvar com Data Atual</button>
         </div>
     </div>
 
     <div class="card">
-        <h3>Histórico de Ocorrências (Google Sheets)</h3>
+        <h3>Histórico Consolidado (Google Sheets)</h3>
         <table id="tabela-dashboard">
             <thead>
                 <tr>
                     <th>Nome</th>
                     <th>Período</th>
-                    <th>Ocorrências</th>
+                    <th>Qtd. Esquecimentos</th>
                     <th>Status</th>
                     <th>Ação</th>
                 </tr>
             </thead>
             <tbody id="corpo-tabela">
-                <tr><td colspan="5" style="text-align:center;">Carregando dados da planilha...</td></tr>
+                <tr><td colspan="5" style="text-align:center;">Sincronizando com a nuvem...</td></tr>
             </tbody>
         </table>
     </div>
@@ -162,7 +163,7 @@
 </div>
 
 <script>
-    // --- SEGURANÇA ---
+    // --- CREDENCIAIS ---
     const users = {
         "Diana": "246811",
         "Claus": "Cl@86372"
@@ -173,7 +174,6 @@
     function autenticar() {
         const u = document.getElementById('user').value.trim();
         const s = document.getElementById('pass').value.trim();
-        
         if (users[u] && users[u] === s) {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
@@ -183,7 +183,7 @@
         }
     }
 
-    // --- LÓGICA DO SISTEMA ---
+    // --- LOGICA DE DADOS ---
     let alunosBase = JSON.parse(localStorage.getItem('base_alunos')) || [];
     let ocorrencias = [];
     let selecionado = null;
@@ -193,7 +193,9 @@
             const res = await fetch(URL_API);
             ocorrencias = await res.json();
             renderDashboard();
-        } catch (e) { console.error(e); }
+        } catch (e) { 
+            console.error("Erro ao carregar dados do Google Sheets", e); 
+        }
     }
 
     function importarPlanilha(event) {
@@ -208,7 +210,7 @@
                 periodo: i.Período || i.PERIODO || i.periodo 
             }));
             localStorage.setItem('base_alunos', JSON.stringify(alunosBase));
-            alert("Lista de alunos importada!");
+            alert("Lista de alunos importada e salva localmente!");
         };
         reader.readAsArrayBuffer(event.target.files[0]);
     }
@@ -246,38 +248,54 @@
     async function registrarOcorrencia() {
         if(!selecionado) return;
         const btn = document.querySelector('.btn-reg');
-        btn.disabled = true; btn.innerText = "⏳ Gravando...";
+        btn.disabled = true; 
+        btn.innerText = "⏳ Enviando para a planilha...";
+
+        // Geração da Data e Hora do Registro
+        const agora = new Date();
+        const dataFormatada = agora.toLocaleDateString('pt-BR') + " " + agora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
         try {
-            await fetch(URL_API, { method: 'POST', body: JSON.stringify({ ...selecionado, data: new Date().toLocaleDateString('pt-BR') }) });
-            alert("Salvo!"); location.reload();
-        } catch (e) { alert("Erro!"); btn.disabled = false; }
+            await fetch(URL_API, { 
+                method: 'POST', 
+                body: JSON.stringify({ ...selecionado, data: dataFormatada }) 
+            });
+            alert("Registro realizado com sucesso!");
+            location.reload();
+        } catch (e) { 
+            alert("Falha na conexão com o Google Sheets. Verifique a internet."); 
+            btn.disabled = false; 
+            btn.innerText = "Confirmar Registro e Salvar com Data Atual";
+        }
     }
 
     function renderDashboard() {
         const corpo = document.getElementById('corpo-tabela');
-        if (!ocorrencias.length) { corpo.innerHTML = '<tr><td colspan="5">Nenhuma ocorrência.</td></tr>'; return; }
+        if (!ocorrencias.length) { corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum registro encontrado na nuvem.</td></tr>'; return; }
         corpo.innerHTML = '';
         const contagem = {};
         ocorrencias.forEach(o => {
-            const k = o.matricula || o.nome;
-            contagem[k] = contagem[k] || { nome: o.nome, per: o.periodo, total: 0 };
-            contagem[k].total++;
+            const id = o.matricula || o.nome;
+            contagem[id] = contagem[id] || { nome: o.nome, per: o.periodo, total: 0 };
+            contagem[id].total++;
         });
         Object.values(contagem).forEach(d => {
             const isCrit = d.total >= 3;
             corpo.innerHTML += `<tr>
                 <td>${d.nome}</td><td>${d.per}º</td><td>${d.total}</td>
                 <td><span class="status-badge ${isCrit?'critical':''}">${isCrit?'ADVERTÊNCIA':'Normal'}</span></td>
-                <td>${isCrit ? `<button class="btn btn-print" onclick="imprimirDoc('${d.nome}', '${d.per}')">🖨️ Imprimir</button>` : '-'}</td>
+                <td>${isCrit ? `<button class="btn btn-print" onclick="imprimirDoc('${d.nome}', '${d.per}')">🖨️ Gerar PDF</button>` : '-'}</td>
             </tr>`;
         });
     }
 
     function imprimirDoc(n, p) {
-        const h = new Date().toLocaleDateString('pt-BR');
-        document.getElementById('p-nome').innerText = n; document.getElementById('v-nome').innerText = n;
-        document.getElementById('p-periodo').innerText = p; document.getElementById('p-data').innerText = h;
-        document.getElementById('p-data-footer').innerText = h;
+        const hoje = new Date().toLocaleDateString('pt-BR');
+        document.getElementById('p-nome').innerText = n; 
+        document.getElementById('v-nome').innerText = n;
+        document.getElementById('p-periodo').innerText = p; 
+        document.getElementById('p-data').innerText = hoje;
+        document.getElementById('p-data-footer').innerText = hoje;
         window.print();
     }
 </script>
