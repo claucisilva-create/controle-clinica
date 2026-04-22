@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Sistema de Controle de Autorização - Suprema</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         /* ESTILOS DE LOGIN */
         #login-screen {
@@ -76,7 +75,7 @@
         <input type="text" id="user" placeholder="Usuário">
         <input type="password" id="pass" placeholder="Senha">
         <button class="btn-login" onclick="autenticar()">Entrar</button>
-        <p id="login-error" style="color:red; display:none; margin-top:10px; font-size:14px;">Acesso negado!</p>
+        <p id="login-error" style="color:red; display:none; margin-top:10px; font-size:14px;">Usuário ou senha incorretos!</p>
     </div>
 </div>
 
@@ -163,19 +162,19 @@
 </div>
 
 <script>
-    // --- SEGURANÇA (HASHING) ---
-    const accessDB = {
-        "Diana": "606d092008890989f63544f86d9ed9f57df3f954752c4a921d78215570258038",
-        "Claus": "d3a4362140c83a7c645b90f5451c890947ba94a53e414c7188177699709a3182"
+    // --- SEGURANÇA ---
+    const users = {
+        "Diana": "246811",
+        "Claus": "Cl@86372"
     };
 
     const URL_API = "https://script.google.com/macros/s/AKfycbxK5CJiIcfQJzJ_ZY1PKnowRTliCpVzq5Zo7VGM20mXl3k0ptWrrGc6UN8c0VOVcpezeQ/exec";
 
     function autenticar() {
-        const u = document.getElementById('user').value;
-        const s = document.getElementById('pass').value;
-        const hash = CryptoJS.SHA256(s).toString();
-        if (accessDB[u] && accessDB[u] === hash) {
+        const u = document.getElementById('user').value.trim();
+        const s = document.getElementById('pass').value.trim();
+        
+        if (users[u] && users[u] === s) {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
             carregarDados();
@@ -209,7 +208,7 @@
                 periodo: i.Período || i.PERIODO || i.periodo 
             }));
             localStorage.setItem('base_alunos', JSON.stringify(alunosBase));
-            alert("Lista de alunos importada com sucesso!");
+            alert("Lista de alunos importada!");
         };
         reader.readAsArrayBuffer(event.target.files[0]);
     }
@@ -220,17 +219,13 @@
         const info = document.getElementById('info-selecionado');
         
         if (t.length < 2) { 
-            lista.style.display = 'none'; 
-            ajuda.style.display = 'none';
-            return; 
+            lista.style.display = 'none'; ajuda.style.display = 'none'; return; 
         }
 
         const f = alunosBase.filter(a => a.nome && a.nome.toLowerCase().includes(t.toLowerCase())).slice(0, 5);
         
         if (f.length === 0) {
-            lista.style.display = 'none';
-            ajuda.style.display = 'block';
-            info.style.display = 'none';
+            lista.style.display = 'none'; ajuda.style.display = 'block'; info.style.display = 'none';
         } else {
             ajuda.style.display = 'none';
             lista.innerHTML = f.map(a => `<div class="item-sugestao" onclick="selecionar('${a.nome}', '${a.periodo}', '${a.matricula}')">${a.nome} (${a.periodo}º)</div>`).join('');
@@ -251,17 +246,16 @@
     async function registrarOcorrencia() {
         if(!selecionado) return;
         const btn = document.querySelector('.btn-reg');
-        btn.disabled = true; btn.innerText = "⏳ Gravando na nuvem...";
+        btn.disabled = true; btn.innerText = "⏳ Gravando...";
         try {
             await fetch(URL_API, { method: 'POST', body: JSON.stringify({ ...selecionado, data: new Date().toLocaleDateString('pt-BR') }) });
-            alert("Sucesso! Registro salvo.");
-            location.reload();
-        } catch (e) { alert("Erro ao salvar."); btn.disabled = false; }
+            alert("Salvo!"); location.reload();
+        } catch (e) { alert("Erro!"); btn.disabled = false; }
     }
 
     function renderDashboard() {
         const corpo = document.getElementById('corpo-tabela');
-        if (!ocorrencias.length) { corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma ocorrência.</td></tr>'; return; }
+        if (!ocorrencias.length) { corpo.innerHTML = '<tr><td colspan="5">Nenhuma ocorrência.</td></tr>'; return; }
         corpo.innerHTML = '';
         const contagem = {};
         ocorrencias.forEach(o => {
