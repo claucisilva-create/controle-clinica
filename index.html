@@ -5,9 +5,23 @@
     <title>Sistema de Controle de Autorização - Suprema</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
+        /* ESTILOS DE LOGIN */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #2c3e50; display: flex; justify-content: center; align-items: center; z-index: 9999;
+        }
+        .login-card {
+            background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            width: 100%; max-width: 350px; text-align: center;
+        }
+        .login-card h2 { margin-bottom: 20px; color: #2c3e50; }
+        .login-card input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .btn-login { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+
         /* ESTILOS DA INTERFACE (SISTEMA) */
         :root { --primary: #2c3e50; --danger: #e74c3c; --success: #27ae60; }
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
+        #main-content { display: none; } /* Escondido até o login */
         .container { max-width: 1000px; margin: auto; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
@@ -23,23 +37,15 @@
         .item-sugestao { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
         .item-sugestao:hover { background: #f0f2f5; }
 
-        /* AJUSTES DE IMPRESSÃO */
+        /* IMPRESSÃO */
         #area-impressao { display: none; }
-
         @media print {
             @page { size: landscape; margin: 1cm; }
             body * { visibility: hidden; }
             #area-impressao, #area-impressao * { visibility: visible; }
-            #area-impressao { 
-                display: block !important;
-                position: absolute; left: 0; top: 0; width: 100%;
-                font-family: "Times New Roman", Times, serif;
-                color: black;
-            }
+            #area-impressao { display: block !important; position: absolute; left: 0; top: 0; width: 100%; font-family: "Times New Roman", serif; color: black; }
             .page-break { page-break-before: always; }
-            .no-print { display: none; }
         }
-
         .frente { width: 100%; }
         .head-word { text-align: center; margin-bottom: 20px; }
         .head-word p { margin: 2px 0; font-size: 16pt; font-weight: bold; }
@@ -50,7 +56,6 @@
         .relato-box { border: 1px solid black; min-height: 140px; padding: 10px; margin-top: 5px; font-size: 11pt; text-align: justify; }
         .footer-signs { margin-top: 50px; display: flex; justify-content: space-between; font-size: 9pt; text-align: center; }
         .sign-line { width: 30%; border-top: 1px solid black; padding-top: 5px; }
-
         .verso { width: 100%; padding-top: 30px; }
         .titulo-ata { text-align: center; font-weight: bold; font-size: 16pt; text-decoration: underline; margin-bottom: 30px; }
         .linha-ata { border-bottom: 1px solid black; height: 35px; margin-bottom: 5px; width: 100%; }
@@ -58,7 +63,17 @@
 </head>
 <body>
 
-<div class="container no-print">
+<div id="login-screen">
+    <div class="login-card">
+        <h2>Acesso Restrito</h2>
+        <input type="text" id="user" placeholder="Usuário">
+        <input type="password" id="pass" placeholder="Senha">
+        <button class="btn-login" onclick="autenticar()">Entrar</button>
+        <p id="login-error" style="color:red; display:none; margin-top:10px; font-size:14px;">Usuário ou senha incorretos!</p>
+    </div>
+</div>
+
+<div id="main-content" class="container no-print">
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h2>🏥 Sistema de Controle de Autorização</h2>
@@ -71,7 +86,6 @@
         <h3>Nova Liberação Excepcional</h3>
         <input type="text" id="inputBusca" placeholder="Pesquisar por nome ou matrícula..." onkeyup="filtrarAlunos(this.value)">
         <div id="lista-sugestoes"></div>
-        
         <div id="info-selecionado" style="display:none; margin-top:15px; padding:20px; background:#e8f4fd; border-left:5px solid #3498db; border-radius: 4px;">
             <strong>Estudante:</strong> <span id="txt-nome"></span><br>
             <strong>Período:</strong> <span id="txt-periodo"></span>º | <strong>Matrícula:</strong> <span id="txt-mat"></span>
@@ -100,26 +114,12 @@
 
 <div id="area-impressao">
     <div class="frente">
-        <div class="head-word">
-            <p>Faculdade de Ciências Médicas</p>
-            <p>e da Saúde de Juiz de Fora</p>
-        </div>
+        <div class="head-word"><p>Faculdade de Ciências Médicas</p><p>e da Saúde de Juiz de Fora</p></div>
         <div class="row-info"><strong>Nome do Estudante:</strong> <span id="p-nome"></span></div>
-        <div class="row-info">
-            <div><strong>Curso:</strong> Odontologia</div>
-            <div><strong>Período:</strong> <span id="p-periodo"></span>º</div>
-            <div><strong>Data:</strong> <span id="p-data"></span></div>
-        </div>
+        <div class="row-info"><div><strong>Curso:</strong> Odontologia</div><div><strong>Período:</strong> <span id="p-periodo"></span>º</div><div><strong>Data:</strong> <span id="p-data"></span></div></div>
         <p style="text-align: center; font-weight: bold; font-size: 11pt; margin: 15px 0;">Indicação – MARQUE UM X A PENALIDADE E A FORMA DE APLICAÇÃO</p>
         <table class="tab-penalidade">
-            <thead>
-                <tr>
-                    <th>PENALIDADE</th>
-                    <th>FORMA DE APLICAÇÃO</th>
-                    <th>INDICAÇÃO</th>
-                    <th>COMPETÊNCIA DE APLICAÇÃO</th>
-                </tr>
-            </thead>
+            <thead><tr><th>PENALIDADE</th><th>FORMA DE APLICAÇÃO</th><th>INDICAÇÃO</th><th>COMPETÊNCIA DE APLICAÇÃO</th></tr></thead>
             <tbody>
                 <tr><td>Advertência</td><td>ORAL</td><td><div class="square"></div></td><td>Professores, Coordenadores, NADD e DEPE</td></tr>
                 <tr><td><strong>Repreensão</strong></td><td><strong>POR ESCRITO</strong></td><td><div class="square">X</div></td><td>Coordenadores, NADD, COEPE, DEPE, Direção Geral.</td></tr>
@@ -130,31 +130,35 @@
         <div><strong>RELATO DO CASO:</strong></div>
         <div class="relato-box">O estudante acima identificado atingiu o limite de 03 (três) liberações excepcionais de material/instrumental por motivo de esquecimento de protocolo de autorização. Conforme as normas da Clínica Odontológica, a reincidência resulta na aplicação desta penalidade formal por escrito.</div>
         <p style="margin-top: 30px;">Juiz de Fora, <span id="p-data-footer"></span></p>
-        <div class="footer-signs">
-            <div class="sign-line">Estudante (s)</div>
-            <div class="sign-line">Coordenador de Curso</div>
-            <div class="sign-line">Responsável pela Aplicação</div>
-        </div>
+        <div class="footer-signs"><div class="sign-line">Estudante (s)</div><div class="sign-line">Coordenador de Curso</div><div class="sign-line">Responsável pela Aplicação</div></div>
         <p style="text-align: center; font-size: 8pt; margin-top: 40px; font-weight: bold;">FORMULÁRIO PARA APLICAÇÃO OU ENCAMINHAMENTO DE ADVERTÊNCIA/REPREENSÃO AOS ESTUDANTES</p>
     </div>
-
     <div class="verso page-break">
         <div class="titulo-ata">ATA DE ATENDIMENTO AO ESTUDANTE</div>
         <div style="margin-bottom: 25px; font-size: 12pt;"><strong>Estudante:</strong> <span id="v-nome">_____________________________________________________________</span></div>
-        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
-        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
-        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
-        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
-        <div style="margin-top: 70px; display: flex; justify-content: space-around;">
-            <div class="sign-line" style="width: 40%;">Assinatura do Estudante</div>
-            <div class="sign-line" style="width: 40%;">Assinatura do Responsável</div>
-        </div>
+        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
+        <div style="margin-top: 70px; display: flex; justify-content: space-around;"><div class="sign-line" style="width: 40%;">Assinatura do Estudante</div><div class="sign-line" style="width: 40%;">Assinatura do Responsável</div></div>
     </div>
 </div>
 
 <script>
+    // --- SEGURANÇA ---
+    const credenciais = { "Diana": "246811", "Claus": "Cl@86372" };
+
+    function autenticar() {
+        const u = document.getElementById('user').value;
+        const s = document.getElementById('pass').value;
+        if (credenciais[u] && credenciais[u] === s) {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            carregarDados();
+        } else {
+            document.getElementById('login-error').style.display = 'block';
+        }
+    }
+
+    // --- LÓGICA DO SISTEMA ---
     const URL_API = "https://script.google.com/macros/s/AKfycbxK5CJiIcfQJzJ_ZY1PKnowRTliCpVzq5Zo7VGM20mXl3k0ptWrrGc6UN8c0VOVcpezeQ/exec";
-    
     let alunosBase = JSON.parse(localStorage.getItem('base_alunos')) || [];
     let ocorrencias = [];
     let selecionado = null;
@@ -164,10 +168,7 @@
             const res = await fetch(URL_API);
             ocorrencias = await res.json();
             renderDashboard();
-        } catch (e) {
-            console.error("Erro ao carregar dados:", e);
-            document.getElementById('corpo-tabela').innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Erro ao conectar com o Google Sheets.</td></tr>';
-        }
+        } catch (e) { console.error(e); }
     }
 
     function importarPlanilha(event) {
@@ -208,24 +209,20 @@
 
     async function registrarOcorrencia() {
         if(!selecionado) return;
-        const pld = { ...selecionado, data: new Date().toLocaleDateString('pt-BR') };
         const btn = document.querySelector('.btn-reg');
-        btn.disabled = true;
-        btn.innerText = "⏳ Gravando na nuvem...";
+        btn.disabled = true; btn.innerText = "⏳ Gravando na nuvem...";
+        const pld = { ...selecionado, data: new Date().toLocaleDateString('pt-BR') };
         try {
             await fetch(URL_API, { method: 'POST', body: JSON.stringify(pld) });
             alert("Sucesso! Registro salvo.");
             location.reload();
-        } catch (e) {
-            alert("Erro ao salvar.");
-            btn.disabled = false;
-        }
+        } catch (e) { alert("Erro ao salvar."); btn.disabled = false; }
     }
 
     function renderDashboard() {
         const corpo = document.getElementById('corpo-tabela');
         if (!ocorrencias || ocorrencias.length === 0) {
-            corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma ocorrência.</td></tr>';
+            corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma ocorrência registrada.</td></tr>';
             return;
         }
         corpo.innerHTML = '';
@@ -235,7 +232,6 @@
             contagem[key] = contagem[key] || { nome: o.nome, per: o.periodo, total: 0 };
             contagem[key].total++;
         });
-
         Object.entries(contagem).forEach(([key, dados]) => {
             const isCrit = dados.total >= 3;
             corpo.innerHTML += `<tr>
@@ -248,15 +244,11 @@
 
     function imprimirDoc(n, p) {
         const hoje = new Date().toLocaleDateString('pt-BR');
-        document.getElementById('p-nome').innerText = n;
-        document.getElementById('v-nome').innerText = n;
-        document.getElementById('p-periodo').innerText = p;
-        document.getElementById('p-data').innerText = hoje;
+        document.getElementById('p-nome').innerText = n; document.getElementById('v-nome').innerText = n;
+        document.getElementById('p-periodo').innerText = p; document.getElementById('p-data').innerText = hoje;
         document.getElementById('p-data-footer').innerText = hoje;
         window.print();
     }
-
-    carregarDados();
 </script>
 </body>
 </html>
