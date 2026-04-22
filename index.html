@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Controle de Autorização - Odontologia</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* ESTILOS DO SISTEMA (Interface) */
+        :root { --primary: #2c3e50; --danger: #e74c3c; --success: #27ae60; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; }
+        .btn-import { background: #8e44ad; }
+        .btn-reg { background: var(--success); width: 100%; margin-top: 10px; }
+        .btn-print { background: var(--primary); font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .critical { background: var(--danger); color: white; }
+        #lista-sugestoes { border: 1px solid #ddd; border-radius: 4px; max-height: 200px; overflow-y: auto; display: none; background: white; }
+        .item-sugestao { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .item-sugestao:hover { background: #f0f2f5; }
+
+        /* AJUSTES DE IMPRESSÃO - ORIENTAÇÃO HORIZONTAL E VERSO */
+        #area-impressao { display: none; }
+
+        @media print {
+            @page { size: landscape; margin: 1cm; }
+            body * { visibility: hidden; }
+            #area-impressao, #area-impressao * { visibility: visible; }
+            #area-impressao { 
+                display: block !important;
+                position: absolute; left: 0; top: 0; width: 100%;
+                font-family: "Times New Roman", Times, serif;
+                color: black;
+            }
+            .page-break { page-break-before: always; }
+            .no-print { display: none; }
+        }
+
+        /* Estilo Frente (Igual ao Word) */
+        .frente { width: 100%; min-height: 100%; }
+        .head-word { text-align: center; margin-bottom: 20px; }
+        .head-word p { margin: 2px 0; font-size: 16pt; font-weight: bold; }
+        .row-info { margin-bottom: 15px; font-size: 12pt; display: flex; gap: 40px; }
+        .tab-penalidade { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .tab-penalidade th, .tab-penalidade td { border: 1px solid black; padding: 8px; font-size: 10pt; text-align: center; }
+        .square { display: inline-block; width: 16px; height: 16px; border: 1px solid black; vertical-align: middle; line-height: 14px; font-weight: bold; }
+        .relato-box { border: 1px solid black; min-height: 120px; padding: 10px; margin-top: 5px; font-size: 11pt; text-align: justify; }
+        .footer-signs { margin-top: 40px; display: flex; justify-content: space-between; font-size: 9pt; text-align: center; }
+        .sign-line { width: 30%; border-top: 1px solid black; padding-top: 5px; }
+
+        /* Estilo Verso (Ata de Atendimento) */
+        .verso { width: 100%; padding-top: 20px; }
+        .titulo-ata { text-align: center; font-weight: bold; font-size: 14pt; text-decoration: underline; margin-bottom: 20px; }
+        .linha-ata { border-bottom: 1px solid black; height: 30px; margin-bottom: 5px; width: 100%; }
+    </style>
+</head>
+<body>
+
+<div class="container no-print">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between;">
+            <h2>🏥 Controle de Materiais - Suprema</h2>
+            <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📥 Importar Alunos (.xlsx)</button>
+            <input type="file" id="fileInput" style="display:none" accept=".xlsx" onchange="importarPlanilha(event)">
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Nova Liberação</h3>
+        <input type="text" id="inputBusca" placeholder="Pesquisar aluno..." onkeyup="filtrarAlunos(this.value)" style="width:100%; padding:12px; border:1px solid #ccc; border-radius:5px;">
+        <div id="lista-sugestoes"></div>
+        <div id="info-selecionado" style="display:none; margin-top:15px; padding:15px; background:#e8f4fd; border-left:5px solid #3498db;">
+            <strong>Aluno:</strong> <span id="txt-nome"></span> | <strong>Período:</strong> <span id="txt-periodo"></span>º
+            <button class="btn btn-reg" onclick="registrarOcorrencia()">Confirmar Liberação</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Dashboard de Ocorrências</h3>
+        <table id="tabela-dashboard">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Período</th>
+                    <th>Esquecimentos</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody id="corpo-tabela"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="area-impressao">
+    <div class="frente">
+        <div class="head-word">
+            <p>Faculdade de Ciências Médicas</p>
+            <p>e da Saúde de Juiz de Fora</p>
+        </div>
+
+        <div class="row-info"><strong>Nome do Estudante:</strong> <span id="p-nome"></span></div>
+        <div class="row-info">
+            <div><strong>Curso:</strong> Odontologia</div>
+            <div><strong>Período:</strong> <span id="p-periodo"></span>º</div>
+            <div><strong>Data:</strong> <span id="p-data"></span></div>
+        </div>
+
+        <p style="text-align: center; font-weight: bold; font-size: 11pt; margin: 20px 0 10px 0;">
+            Indicação – MARQUE UM X A PENALIDADE E A FORMA DE APLICAÇÃO
+        </p>
+
+        <table class="tab-penalidade">
+            <thead>
+                <tr>
+                    <th>PENALIDADE</th>
+                    <th>FORMA DE APLICAÇÃO</th>
+                    <th>INDICAÇÃO</th>
+                    <th>COMPETÊNCIA DE APLICAÇÃO</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Advertência</td>
+                    <td>ORAL</td>
+                    <td><div class="square"></div></td>
+                    <td>Professores, Coordenadores, NADD e DEPE</td>
+                </tr>
+                <tr>
+                    <td><strong>Repreensão</strong></td>
+                    <td><strong>POR ESCRITO</strong></td>
+                    <td><div class="square">X</div></td>
+                    <td>Coordenadores, NADD, COEPE, DEPE, Direção Geral.</td>
+                </tr>
+                <tr>
+                    <td>Suspensão</td>
+                    <td>POR ESCRITO</td>
+                    <td><div class="square"></div></td>
+                    <td>Coordenadores, NADD, COEPE, DEPE, Diretor Geral.</td>
+                </tr>
+                <tr>
+                    <td>Desligamento</td>
+                    <td>POR ESCRITO</td>
+                    <td><div class="square"></div></td>
+                    <td>1ª inst. Colegiado de curso; 2ª inst. CEPE e Dir. Geral</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="margin-top: 15px;"><strong>RELATO DO CASO:</strong></div>
+        <div class="relato-box">
+            O referido estudante identificado acima atingiu o limite de 03 (três) liberações excepcionais de material por motivo de esquecimento de protocolo de autorização. Esta medida visa reforçar a observância das normas de organização clínica da instituição.
+        </div>
+
+        <p style="margin-top: 30px;">Juiz de Fora, <span id="p-data-footer"></span></p>
+
+        <div class="footer-signs">
+            <div class="sign-line">Estudante (s)</div>
+            <div class="sign-line">Coordenador de Curso</div>
+            <div class="sign-line">Responsável pela Aplicação</div>
+        </div>
+        <p style="text-align: center; font-size: 8pt; margin-top: 30px; font-weight: bold;">
+            FORMULÁRIO PARA APLICAÇÃO OU ENCAMINHAMENTO DE ADVERTÊNCIA/REPREENSÃO AOS ESTUDANTES
+        </p>
+    </div>
+
+    <div class="verso page-break">
+        <div class="titulo-ata">ATA DE ATENDIMENTO AO ESTUDANTE</div>
+        <div style="margin-bottom: 20px; font-size: 11pt;">
+            <strong>Estudante:</strong> __________________________________________________________________________
+        </div>
+        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
+        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
+        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
+        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
+        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
+        
+        <div style="margin-top: 50px; display: flex; justify-content: space-around;">
+            <div class="sign-line" style="width: 40%;">Assinatura do Estudante</div>
+            <div class="sign-line" style="width: 40%;">Assinatura do Responsável</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* LÓGICA DO SISTEMA - MANTIDA IGUAL */
+    let alunosBase = [];
+    let ocorrencias = JSON.parse(localStorage.getItem('ocorrencias_odonto')) || [];
+    let selecionado = null;
+
+    function importarPlanilha(event) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(sheet);
+            alunosBase = json.map(item => ({
+                nome: item.Nome || item.NOME || item.nome,
+                matricula: item.Matrícula || item.MATRICULA || item.matricula,
+                periodo: item.Período || item.PERIODO || item.periodo
+            }));
+            alert("Base importada!");
+        };
+        reader.readAsArrayBuffer(event.target.files[0]);
+    }
+
+    function filtrarAlunos(termo) {
+        const lista = document.getElementById('lista-sugestoes');
+        if (termo.length < 2) { lista.style.display = 'none'; return; }
+        const filtrados = alunosBase.filter(a => a.nome.toLowerCase().includes(termo.toLowerCase())).slice(0, 5);
+        lista.innerHTML = filtrados.map(a => `<div class="item-sugestao" onclick="selecionarAluno('${a.nome}', '${a.periodo}', '${a.matricula}')">${a.nome} (${a.periodo}º)</div>`).join('');
+        lista.style.display = 'block';
+    }
+
+    function selecionarAluno(nome, periodo, mat) {
+        selecionado = { nome, periodo, mat };
+        document.getElementById('txt-nome').innerText = nome;
+        document.getElementById('txt-periodo').innerText = periodo;
+        document.getElementById('info-selecionado').style.display = 'block';
+        document.getElementById('lista-sugestoes').style.display = 'none';
+        document.getElementById('inputBusca').value = nome;
+    }
+
+    function registrarOcorrencia() {
+        ocorrencias.push({ ...selecionado, data: new Date().toISOString() });
+        localStorage.setItem('ocorrencias_odonto', JSON.stringify(ocorrencias));
+        renderDashboard();
+        document.getElementById('info-selecionado').style.display = 'none';
+        document.getElementById('inputBusca').value = "";
+    }
+
+    function imprimirDoc(nome, periodo) {
+        const dataHj = new Date().toLocaleDateString('pt-BR');
+        document.getElementById('p-nome').innerText = nome;
+        document.getElementById('p-periodo').innerText = periodo;
+        document.getElementById('p-data').innerText = dataHj;
+        document.getElementById('p-data-footer').innerText = dataHj;
+        window.print();
+    }
+
+    function renderDashboard() {
+        const corpo = document.getElementById('corpo-tabela');
+        corpo.innerHTML = '';
+        const resumo = {};
+        ocorrencias.forEach(o => {
+            resumo[o.mat] = resumo[o.mat] || { nome: o.nome, periodo: o.periodo, total: 0 };
+            resumo[o.mat].total++;
+        });
+        Object.values(resumo).forEach(item => {
+            const isCritical = item.total >= 3;
+            corpo.innerHTML += `<tr><td>${item.nome}</td><td>${item.periodo}º</td><td>${item.total}</td>
+                <td><span class="status-badge ${isCritical?'critical':''}">${isCritical?'ADVERTÊNCIA':'Normal'}</span></td>
+                <td>${isCritical ? `<button class="btn btn-print" onclick="imprimirDoc('${item.nome}', '${item.periodo}')">🖨️ Imprimir</button>` : '-'}</td></tr>`;
+        });
+    }
+    renderDashboard();
+</script>
+</body>
+</html>
