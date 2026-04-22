@@ -8,28 +8,47 @@
         /* ESTILOS BASE */
         :root { --primary: #2c3e50; --danger: #e74c3c; --success: #27ae60; --info: #3498db; }
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
+        
+        /* LOGIN */
         #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; display: flex; justify-content: center; align-items: center; z-index: 9999; }
         .login-card { background: white; padding: 40px; border-radius: 10px; width: 100%; max-width: 350px; text-align: center; }
+        
         #main-content { display: none; }
         .container { max-width: 1000px; margin: auto; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; text-decoration: none; display: inline-block; }
-        .btn-import { background: #8e44ad; }
-        .btn-reg { background: var(--success); width: 100%; margin-top: 15px; }
         
-        /* CAMPOS DE FORMULÁRIO */
+        /* BOTÕES */
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; text-decoration: none; display: inline-block; transition: 0.3s; }
+        .btn-import { background: #8e44ad; }
+        .btn-help { background: #7f8c8d; font-size: 12px; margin-top: 5px; }
+        .btn-reg { background: var(--success); width: 100%; margin-top: 15px; }
+        .btn-link { background: var(--info); font-size: 13px; margin-top: 10px; }
+        .btn-print { background: var(--primary); font-size: 11px; padding: 5px 10px; }
+
+        /* INPUTS */
         input[type="text"], input[type="password"], textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; margin-top: 5px; font-family: inherit; }
         .field-group { margin-top: 10px; text-align: left; }
         .field-group label { font-weight: bold; font-size: 14px; color: var(--primary); }
 
+        /* TABELA E BUSCA */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
-        .status-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; }
-        .critical { background: var(--danger); color: white; }
-        
         #lista-sugestoes { border: 1px solid #ddd; border-radius: 4px; max-height: 150px; overflow-y: auto; display: none; background: white; position: absolute; width: 960px; z-index: 10; }
         .item-sugestao { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
         .item-sugestao:hover { background: #f0f2f5; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .critical { background: var(--danger); color: white; }
+        .ajuda-cadastro { margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 5px solid #ffc107; border-radius: 4px; display: none; }
+
+        /* IMPRESSÃO */
+        #area-impressao { display: none; }
+        @media print {
+            @page { size: landscape; margin: 1cm; }
+            body * { visibility: hidden; }
+            #area-impressao, #area-impressao * { visibility: visible; }
+            #area-impressao { display: block !important; position: absolute; left: 0; top: 0; width: 100%; font-family: "Times New Roman", serif; }
+            .page-break { page-break-before: always; }
+        }
     </style>
 </head>
 <body>
@@ -46,47 +65,64 @@
 
 <div id="main-content" class="container">
     <div class="card">
-        <div style="display: flex; justify-content: space-between;">
-            <h2>🏥 Controle de Autorização</h2>
-            <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📥 Importar Alunos</button>
-            <input type="file" id="fileInput" style="display:none" accept=".xlsx" onchange="importarPlanilha(event)">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <h2>🏥 Controle de Autorização</h2>
+                <small>Clínica Odontológica - Gestão de Ocorrências</small>
+            </div>
+            <div style="text-align: right;">
+                <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📥 Importar Lista Alunos</button><br>
+                <a href="https://suprema.sharepoint.com/:x:/s/ClnicaOdonto/IQA9DWUTgucoQqfkhiMgGQ4QAd1yp_L1ktUKPBNr6AO_IEk?e=6OtV9N" target="_blank" class="btn btn-help">📄 Baixar Planilha Modelo</a>
+                <input type="file" id="fileInput" style="display:none" accept=".xlsx" onchange="importarPlanilha(event)">
+            </div>
         </div>
     </div>
 
     <div class="card">
-        <h3>Nova Liberação</h3>
-        <input type="text" id="inputBusca" placeholder="Pesquisar aluno..." onkeyup="filtrarAlunos(this.value)">
+        <h3>Nova Liberação Excepcional</h3>
+        <input type="text" id="inputBusca" placeholder="Pesquisar por nome ou matrícula..." onkeyup="filtrarAlunos(this.value)">
         <div id="lista-sugestoes"></div>
+
+        <div id="ajuda-cadastro" class="ajuda-cadastro">
+            <strong>Aluno não encontrado?</strong><br>
+            Cadastre o aluno na planilha oficial do Teams antes de registrar.<br>
+            <a href="https://suprema.sharepoint.com/:x:/s/ClnicaOdonto/IQA9DWUTgucoQqfkhiMgGQ4QAd1yp_L1ktUKPBNr6AO_IEk?e=6OtV9N" target="_blank" class="btn btn-link">🔗 Abrir Planilha no Teams</a>
+        </div>
 
         <div id="info-selecionado" style="display:none; margin-top:15px; padding:20px; background:#e8f4fd; border-radius: 8px;">
             <strong>Estudante:</strong> <span id="txt-nome"></span> (<span id="txt-mat"></span>)<br>
             
             <div class="field-group">
                 <label>Número do Protocolo:</label>
-                <input type="text" id="campo-protocolo" placeholder="Ex: 2024/ABC-123">
+                <input type="text" id="campo-protocolo" placeholder="Ex: 5436">
             </div>
 
             <div class="field-group">
                 <label>Observação:</label>
-                <textarea id="campo-obs" rows="2" placeholder="Motivo da liberação ou detalhes extras..."></textarea>
+                <textarea id="campo-obs" rows="2" placeholder="Descreva o motivo..."></textarea>
             </div>
 
-            <button class="btn btn-reg" onclick="registrarOcorrencia()">Confirmar e Salvar na Planilha</button>
+            <button class="btn btn-reg" id="btn-salvar" onclick="registrarOcorrencia()">Confirmar e Salvar na Planilha</button>
         </div>
     </div>
 
     <div class="card">
-        <h3>Histórico</h3>
+        <h3>Histórico Consolidado (Nuvem)</h3>
         <table>
-            <thead><tr><th>Nome</th><th>Período</th><th>Esquecimentos</th><th>Status</th></tr></thead>
-            <tbody id="corpo-tabela"></tbody>
+            <thead><tr><th>Nome</th><th>Período</th><th>Esquecimentos</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="corpo-tabela"><tr><td colspan="5">Carregando dados...</td></tr></tbody>
         </table>
     </div>
 </div>
 
+<div id="area-impressao">
+    </div>
+
 <script>
+    // --- CONFIGURAÇÃO ---
     const users = { "Diana": "246811", "Claus": "Cl@86372" };
-    const URL_API = "https://script.google.com/macros/s/SEU_NOVO_ID_AQUI/exec";
+    // ATENÇÃO: Cole abaixo a URL da sua NOVA IMPLANTAÇÃO do Google Apps Script
+    const URL_API = "https://script.google.com/macros/s/AKfycbxALsoP0oo6xc3hl3Fi7wVxQVxULJK3wGg3qd79rB43AL9ph_aA1RBluGg8C5R5rtS-zg/exec";
 
     function autenticar() {
         const u = document.getElementById('user').value.trim();
@@ -107,15 +143,23 @@
             const res = await fetch(URL_API);
             ocorrencias = await res.json();
             renderDashboard();
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error("Erro ao carregar:", e); }
     }
 
     function filtrarAlunos(t) {
         const lista = document.getElementById('lista-sugestoes');
-        if (t.length < 2) { lista.style.display = 'none'; return; }
-        const f = alunosBase.filter(a => a.nome.toLowerCase().includes(t.toLowerCase())).slice(0, 5);
-        lista.innerHTML = f.map(a => `<div class="item-sugestao" onclick="selecionar('${a.nome}', '${a.periodo}', '${a.matricula}')">${a.nome}</div>`).join('');
-        lista.style.display = 'block';
+        const ajuda = document.getElementById('ajuda-cadastro');
+        if (t.length < 2) { lista.style.display = 'none'; ajuda.style.display = 'none'; return; }
+        
+        const f = alunosBase.filter(a => a.nome && a.nome.toLowerCase().includes(t.toLowerCase())).slice(0, 5);
+        
+        if(f.length === 0) {
+            lista.style.display = 'none'; ajuda.style.display = 'block';
+        } else {
+            ajuda.style.display = 'none';
+            lista.innerHTML = f.map(a => `<div class="item-sugestao" onclick="selecionar('${a.nome}', '${a.periodo}', '${a.matricula}')">${a.nome} (${a.periodo}º)</div>`).join('');
+            lista.style.display = 'block';
+        }
     }
 
     function selecionar(n, p, m) {
@@ -124,12 +168,13 @@
         document.getElementById('txt-mat').innerText = m;
         document.getElementById('info-selecionado').style.display = 'block';
         document.getElementById('lista-sugestoes').style.display = 'none';
+        document.getElementById('inputBusca').value = n;
     }
 
     async function registrarOcorrencia() {
+        const btn = document.getElementById('btn-salvar');
         const prot = document.getElementById('campo-protocolo').value;
         const obs = document.getElementById('campo-obs').value;
-        const btn = document.querySelector('.btn-reg');
         
         btn.disabled = true; btn.innerText = "⏳ Gravando...";
         
@@ -141,10 +186,15 @@
         };
 
         try {
-            await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
-            alert("Registrado com sucesso!");
-            location.reload();
-        } catch (e) { alert("Erro ao salvar."); btn.disabled = false; }
+            const response = await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
+            if(response.ok) {
+                alert("✅ Registro salvo com sucesso!");
+                location.reload();
+            } else { throw new Error(); }
+        } catch (e) { 
+            alert("❌ Erro ao salvar. Verifique se a URL da API está correta."); 
+            btn.disabled = false; btn.innerText = "Confirmar e Salvar na Planilha";
+        }
     }
 
     function renderDashboard() {
@@ -161,6 +211,7 @@
             corpo.innerHTML += `<tr>
                 <td>${d.nome}</td><td>${d.per}º</td><td>${d.total}</td>
                 <td><span class="status-badge ${isCrit?'critical':''}">${isCrit?'ADVERTÊNCIA':'Normal'}</span></td>
+                <td>${isCrit ? `<button class="btn btn-print">🖨️ Imprimir</button>` : '-'}</td>
             </tr>`;
         });
     }
@@ -171,9 +222,13 @@
             const data = new Uint8Array(e.target.result);
             const wb = XLSX.read(data, {type: 'array'});
             const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-            alunosBase = json.map(i => ({ nome: i.Nome || i.NOME, matricula: i.Matrícula || i.MATRICULA, periodo: i.Período || i.PERIODO }));
+            alunosBase = json.map(i => ({ 
+                nome: i.Nome || i.NOME || i.nome, 
+                matricula: i.Matrícula || i.MATRICULA || i.matricula, 
+                periodo: i.Período || i.PERIODO || i.periodo 
+            }));
             localStorage.setItem('base_alunos', JSON.stringify(alunosBase));
-            alert("Alunos importados!");
+            alert("✅ Lista de alunos atualizada!");
         };
         reader.readAsArrayBuffer(event.target.files[0]);
     }
