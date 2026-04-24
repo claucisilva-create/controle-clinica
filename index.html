@@ -75,7 +75,7 @@
         <h3>Histórico Consolidado (Nuvem)</h3>
         <table>
             <thead><tr><th>Nome</th><th>Período</th><th>Esquecimentos</th><th>Status</th><th>Ações</th></tr></thead>
-            <tbody id="corpo-tabela"><tr><td colspan="5" style="text-align:center;">Carregando...</td></tr></tbody>
+            <tbody id="corpo-tabela"><tr><td colspan="5" style="text-align:center;">Carregando dados...</td></tr></tbody>
         </table>
     </div>
 </div>
@@ -163,15 +163,14 @@
             nome: nome, periodo: periodo, matricula: matricula, 
             data: new Date().toLocaleString('pt-BR'), 
             protocolo: "ESTORNO", 
-            observacao: "REDUCAO: Aluno apresentou o protocolo pendente." 
+            observacao: "REDUCAO: Ajuste de saldo efetuado." 
         };
         try {
             await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
             location.reload();
-        } catch (e) { alert("Erro."); }
+        } catch (e) { alert("Erro ao processar redução."); }
     }
 
-    // FUNÇÃO REFORÇADA PARA LIMPAR NOMES DE COLUNAS
     function limparChave(str) {
         return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
     }
@@ -181,14 +180,13 @@
         corpo.innerHTML = '';
         
         if (!ocorrencias || ocorrencias.length === 0) {
-            corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum dado na planilha.</td></tr>';
+            corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum registro encontrado.</td></tr>';
             return;
         }
 
         const contagem = {};
 
         ocorrencias.forEach(o => {
-            // Mapeia o objeto o para chaves limpas (nome, matricula, observacao)
             let objLimpo = {};
             Object.keys(o).forEach(key => { objLimpo[limparChave(key)] = o[key]; });
 
@@ -200,11 +198,13 @@
                 contagem[id] = { nome: nome, per: objLimpo.periodo || "?", mat: objLimpo.matricula || "", total: 0 };
             }
             
-            const obs = limparChave(String(objLimpo.observacao || ""));
-            if (obs.includes("reducao")) {
-                contagem[id].total -= 1;
+            // Lógica Corrigida: Normaliza a observação para detectar "REDUCAO" sem falhas
+            const obsNormalizada = String(objLimpo.observacao || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            
+            if (obsNormalizada.includes("REDUCAO")) {
+                contagem[id].total -= 1; // Subtrai o registro
             } else {
-                contagem[id].total += 1;
+                contagem[id].total += 1; // Soma o registro
             }
         });
 
@@ -224,7 +224,7 @@
             }
         });
 
-        if (!temAlunos) corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Saldos zerados.</td></tr>';
+        if (!temAlunos) corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Todos os saldos estão zerados.</td></tr>';
     }
 
     function imprimirDoc(n, p) {
@@ -246,7 +246,7 @@
                 periodo: i.Período || i.PERIODO || i.periodo 
             }));
             localStorage.setItem('base_alunos', JSON.stringify(alunosBase));
-            alert("Base atualizada!");
+            alert("Base de alunos importada com sucesso!");
         };
         reader.readAsArrayBuffer(event.target.files[0]);
     }
