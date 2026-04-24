@@ -6,7 +6,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         /* ESTILOS DE TELA */
-        :root { --primary: #2c3e50; --danger: #e74c3c; --success: #27ae60; --info: #3498db; }
+        :root { --primary: #2c3e50; --danger: #e74c3c; --success: #27ae60; --info: #3498db; --warning: #e67e22; }
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
         #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; display: flex; justify-content: center; align-items: center; z-index: 9999; }
         .login-card { background: white; padding: 40px; border-radius: 10px; width: 100%; max-width: 350px; text-align: center; }
@@ -18,6 +18,7 @@
         .btn-help { background: #7f8c8d; font-size: 12px; margin-top: 5px; }
         .btn-reg { background: var(--success); width: 100%; margin-top: 15px; }
         .btn-print { background: var(--primary); font-size: 11px; padding: 5px 10px; }
+        .btn-reduce { background: var(--warning); font-size: 11px; padding: 5px 10px; }
         input[type="text"], input[type="password"], textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; margin-top: 5px; font-family: inherit; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
@@ -145,8 +146,8 @@
 
 <script>
     const users = { "Diana": "246811", "Claus": "Cl@86372" };
-    // COLOQUE ABAIXO A SUA NOVA URL DE IMPLANTAÇÃO
-    const URL_API = "https://script.google.com/macros/s/AKfycbwtziFqismGD1g_Oo7eKV5LbLu7onQgqGEPW84evX2h1D3oR8g5nYtj-C2eXitRiWGBlA/exec";
+    const URL_API = "https://script.google.com/macros/s/AKfycbwtziFqismGD1g_Oo7eKV5LbLu7onQgqGEPW84evX2h1D3oR8g5nYtj-C2eXitRiWGBlA/exec"; // Atualize aqui
+    const TOKEN_SEGURANCA = "SuaSenhaSecreta123"; // Atualize aqui (igual ao Apps Script)
 
     function autenticar() {
         const u = document.getElementById('user').value.trim();
@@ -167,7 +168,7 @@
             const res = await fetch(URL_API);
             ocorrencias = await res.json();
             renderDashboard();
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error("Erro ao carregar dados:", e); }
     }
 
     function filtrarAlunos(t) {
@@ -193,24 +194,42 @@
     }
 
     async function registrarOcorrencia() {
-    const btn = document.getElementById('btn-salvar');
-    const payload = { 
-        token: "SuaSenhaSecreta123", // ADICIONE ESTA LINHA (Igual à do Script)
-        nome: selecionado.nome, 
-        periodo: selecionado.periodo, 
-        matricula: selecionado.matricula, 
-        data: new Date().toLocaleString('pt-BR'), 
-        protocolo: document.getElementById('campo-protocolo').value, 
-        observacao: document.getElementById('campo-obs').value 
-    };
-    
-    // ... resto do código (fetch, alert, etc) continua igual
+        const btn = document.getElementById('btn-salvar');
+        const payload = { 
+            token: TOKEN_SEGURANCA,
+            nome: selecionado.nome, 
+            periodo: selecionado.periodo, 
+            matricula: selecionado.matricula, 
+            data: new Date().toLocaleString('pt-BR'), 
+            protocolo: document.getElementById('campo-protocolo').value, 
+            observacao: document.getElementById('campo-obs').value 
+        };
         btn.disabled = true; btn.innerText = "⏳ Gravando...";
         try {
             await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
-            alert("✅ Salvo com sucesso!");
+            alert("✅ Registro salvo com sucesso!");
             location.reload();
         } catch (e) { alert("❌ Erro ao salvar."); btn.disabled = false; btn.innerText = "Confirmar e Salvar na Planilha"; }
+    }
+
+    async function reduzirOcorrencia(nome, periodo, matricula) {
+        if (!confirm(`Deseja reduzir 1 esquecimento para ${nome}? Isso será registrado na planilha como estorno.`)) return;
+        
+        const payload = { 
+            token: TOKEN_SEGURANCA,
+            nome: nome, 
+            periodo: periodo, 
+            matricula: matricula, 
+            data: new Date().toLocaleString('pt-BR'), 
+            protocolo: "ESTORNO", 
+            observacao: "REDUÇÃO: Aluno apresentou o protocolo com data/hora retroativa." 
+        };
+
+        try {
+            await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
+            alert("✅ Redução registrada com sucesso!");
+            location.reload();
+        } catch (e) { alert("❌ Erro ao processar redução."); }
     }
 
     function renderDashboard() {
@@ -220,20 +239,33 @@
             corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum registro encontrado.</td></tr>';
             return;
         }
+
         const contagem = {};
         ocorrencias.forEach(o => {
             const id = o.matricula || o.nome;
             const perVal = o.periodo || "?";
-            if (!contagem[id]) contagem[id] = { nome: o.nome, per: perVal, total: 0 };
-            contagem[id].total++;
+            if (!contagem[id]) contagem[id] = { nome: o.nome, per: perVal, mat: o.matricula, total: 0 };
+            
+            // Lógica de saldo: Se a observação contiver "REDUÇÃO", subtrai 1, senão soma 1.
+            const valor = (o.observacao && o.observacao.includes("REDUÇÃO")) ? -1 : 1;
+            contagem[id].total += valor;
         });
+
         Object.values(contagem).forEach(d => {
-            const isCrit = d.total >= 3;
-            corpo.innerHTML += `<tr>
-                <td>${d.nome}</td><td>${d.per}º</td><td>${d.total}</td>
-                <td><span class="status-badge ${isCrit?'critical':''}">${isCrit?'ADVERTÊNCIA':'Normal'}</span></td>
-                <td>${isCrit ? `<button class="btn btn-print" onclick="imprimirDoc('${d.nome}', '${d.per}')">🖨️ Imprimir</button>` : '-'}</td>
-            </tr>`;
+            // Só exibe se o saldo de esquecimentos for maior que zero
+            if (d.total > 0) {
+                const isCrit = d.total >= 3;
+                corpo.innerHTML += `<tr>
+                    <td>${d.nome}</td><td>${d.per}º</td><td>${d.total}</td>
+                    <td><span class="status-badge ${isCrit?'critical':''}">${isCrit?'ADVERTÊNCIA':'Normal'}</span></td>
+                    <td>
+                        <div style="display: flex; gap: 5px;">
+                            ${isCrit ? `<button class="btn btn-print" onclick="imprimirDoc('${d.nome}', '${d.per}')" title="Imprimir Advertência">🖨️</button>` : ''}
+                            <button class="btn btn-reduce" onclick="reduzirOcorrencia('${d.nome}', '${d.per}', '${d.mat}')" title="Reduzir Esquecimento">➖ Reduzir</button>
+                        </div>
+                    </td>
+                </tr>`;
+            }
         });
     }
 
@@ -253,9 +285,13 @@
             const data = new Uint8Array(e.target.result);
             const wb = XLSX.read(data, {type: 'array'});
             const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-            alunosBase = json.map(i => ({ nome: i.Nome || i.NOME || i.nome, matricula: i.Matrícula || i.MATRICULA || i.matricula, periodo: i.Período || i.PERIODO || i.periodo }));
+            alunosBase = json.map(i => ({ 
+                nome: i.Nome || i.NOME || i.nome, 
+                matricula: i.Matrícula || i.MATRICULA || i.matricula, 
+                periodo: i.Período || i.PERIODO || i.periodo 
+            }));
             localStorage.setItem('base_alunos', JSON.stringify(alunosBase));
-            alert("✅ Lista atualizada!");
+            alert("✅ Lista de alunos atualizada!");
         };
         reader.readAsArrayBuffer(event.target.files[0]);
     }
