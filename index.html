@@ -193,15 +193,18 @@
     }
 
     async function registrarOcorrencia() {
-        const btn = document.getElementById('btn-salvar');
-        const payload = { 
-            nome: selecionado.nome, 
-            periodo: selecionado.periodo, 
-            matricula: selecionado.matricula, 
-            data: new Date().toLocaleString('pt-BR'), 
-            protocolo: document.getElementById('campo-protocolo').value, 
-            observacao: document.getElementById('campo-obs').value 
-        };
+    const btn = document.getElementById('btn-salvar');
+    const payload = { 
+        token: "SuaSenhaSecreta123", // ADICIONE ESTA LINHA (Igual à do Script)
+        nome: selecionado.nome, 
+        periodo: selecionado.periodo, 
+        matricula: selecionado.matricula, 
+        data: new Date().toLocaleString('pt-BR'), 
+        protocolo: document.getElementById('campo-protocolo').value, 
+        observacao: document.getElementById('campo-obs').value 
+    };
+    
+    // ... resto do código (fetch, alert, etc) continua igual
         btn.disabled = true; btn.innerText = "⏳ Gravando...";
         try {
             await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
