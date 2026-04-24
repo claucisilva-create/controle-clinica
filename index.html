@@ -5,7 +5,6 @@
     <title>Sistema de Controle de Autorização - Suprema</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        /* ESTILOS DE TELA */
         :root { --primary: #2c3e50; --danger: #e74c3c; --success: #27ae60; --info: #3498db; --warning: #e67e22; }
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
         #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; display: flex; justify-content: center; align-items: center; z-index: 9999; }
@@ -29,7 +28,6 @@
         .item-sugestao:hover { background: #f0f2f5; }
         .ajuda-cadastro { margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 5px solid #ffc107; border-radius: 4px; display: none; }
 
-        /* ESTILOS DE IMPRESSÃO */
         #area-impressao { display: none; }
         @media print {
             @page { size: landscape; margin: 1cm; }
@@ -88,8 +86,7 @@
         
         <div id="ajuda-cadastro" class="ajuda-cadastro">
             <strong>Aluno não encontrado?</strong><br>
-            Cadastre o aluno na planilha oficial do Teams antes de registrar.<br>
-            <a href="https://suprema.sharepoint.com/:x:/s/ClnicaOdonto/IQA9DWUTgucoQqfkhiMgGQ4QAd1yp_L1ktUKPBNr6AO_IEk?e=6OtV9N" target="_blank" class="btn btn-link">🔗 Abrir Planilha no Teams</a>
+            Cadastre o aluno na planilha oficial do Teams antes de registrar.
         </div>
 
         <div id="info-selecionado" style="display:none; margin-top:15px; padding:20px; background:#e8f4fd; border-radius: 8px;">
@@ -110,7 +107,7 @@
         <h3>Histórico Consolidado (Nuvem)</h3>
         <table>
             <thead><tr><th>Nome</th><th>Período</th><th>Esquecimentos</th><th>Status</th><th>Ações</th></tr></thead>
-            <tbody id="corpo-tabela"><tr><td colspan="5">Carregando dados...</td></tr></tbody>
+            <tbody id="corpo-tabela"><tr><td colspan="5">Sincronizando com a planilha...</td></tr></tbody>
         </table>
     </div>
 </div>
@@ -134,7 +131,6 @@
         <div class="relato-box">O estudante acima identificado atingiu o limite de 03 (três) liberações excepcionais de material/instrumental por motivo de esquecimento de protocolo de autorização. Conforme as normas da Clínica Odontológica, a reincidência resulta na aplicação desta penalidade formal por escrito.</div>
         <p style="margin-top: 30px;">Juiz de Fora, <span id="p-data-footer"></span></p>
         <div class="footer-signs"><div class="sign-line">Estudante (s)</div><div class="sign-line">Coordenador de Curso</div><div class="sign-line">Responsável pela Aplicação</div></div>
-        <p style="text-align: center; font-size: 8pt; margin-top: 40px; font-weight: bold;">FORMULÁRIO PARA APLICAÇÃO OU ENCAMINHAMENTO DE ADVERTÊNCIA/REPREENSÃO AOS ESTUDANTES</p>
     </div>
     <div class="verso page-break">
         <div class="titulo-ata">ATA DE ATENDIMENTO AO ESTUDANTE</div>
@@ -146,8 +142,9 @@
 
 <script>
     const users = { "Diana": "246811", "Claus": "Cl@86372" };
-    const URL_API = "https://script.google.com/macros/s/AKfycbwtziFqismGD1g_Oo7eKV5LbLu7onQgqGEPW84evX2h1D3oR8g5nYtj-C2eXitRiWGBlA/exec"; // Atualize aqui
-    const TOKEN_SEGURANCA = "SuaSenhaSecreta123"; // Atualize aqui (igual ao Apps Script)
+    // CONFIGURAÇÕES DE CONEXÃO
+    const URL_API = "https://script.google.com/macros/s/AKfycbxK5CJiIcfQJzJ_ZY1PKnowRTliCpVzq5Zo7VGM20mXl3k0ptWrrGc6UN8c0VOVcpezeQ/exec";
+    const TOKEN_SEGURANCA = "SuaSenhaSecreta123";
 
     function autenticar() {
         const u = document.getElementById('user').value.trim();
@@ -164,11 +161,15 @@
     let selecionado = null;
 
     async function carregarDados() {
+        const corpo = document.getElementById('corpo-tabela');
         try {
             const res = await fetch(URL_API);
             ocorrencias = await res.json();
             renderDashboard();
-        } catch (e) { console.error("Erro ao carregar dados:", e); }
+        } catch (e) { 
+            corpo.innerHTML = '<tr><td colspan="5" style="color:red; text-align:center;">Erro ao sincronizar com Google Sheets. Verifique o console.</td></tr>';
+            console.error(e); 
+        }
     }
 
     function filtrarAlunos(t) {
@@ -207,34 +208,31 @@
         btn.disabled = true; btn.innerText = "⏳ Gravando...";
         try {
             await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
-            alert("✅ Registro salvo com sucesso!");
+            alert("✅ Registro salvo!");
             location.reload();
         } catch (e) { alert("❌ Erro ao salvar."); btn.disabled = false; btn.innerText = "Confirmar e Salvar na Planilha"; }
     }
 
     async function reduzirOcorrencia(nome, periodo, matricula) {
-        if (!confirm(`Deseja reduzir 1 esquecimento para ${nome}? Isso será registrado na planilha como estorno.`)) return;
-        
+        if (!confirm(`Deseja abater 1 esquecimento para ${nome}?`)) return;
         const payload = { 
             token: TOKEN_SEGURANCA,
-            nome: nome, 
-            periodo: periodo, 
-            matricula: matricula, 
+            nome: nome, periodo: periodo, matricula: matricula, 
             data: new Date().toLocaleString('pt-BR'), 
             protocolo: "ESTORNO", 
-            observacao: "REDUÇÃO: Aluno apresentou o protocolo com data/hora retroativa." 
+            observacao: "REDUÇÃO: Aluno apresentou o protocolo pendente." 
         };
-
         try {
             await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
-            alert("✅ Redução registrada com sucesso!");
+            alert("✅ Redução registrada!");
             location.reload();
-        } catch (e) { alert("❌ Erro ao processar redução."); }
+        } catch (e) { alert("❌ Erro na redução."); }
     }
 
     function renderDashboard() {
         const corpo = document.getElementById('corpo-tabela');
         corpo.innerHTML = '';
+        
         if (!ocorrencias || ocorrencias.length === 0) {
             corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum registro encontrado.</td></tr>';
             return;
@@ -242,31 +240,34 @@
 
         const contagem = {};
         ocorrencias.forEach(o => {
-            const id = o.matricula || o.nome;
-            const perVal = o.periodo || "?";
-            if (!contagem[id]) contagem[id] = { nome: o.nome, per: perVal, mat: o.matricula, total: 0 };
+            if (!o.nome) return;
+            const id = (o.matricula && o.matricula !== "undefined") ? o.matricula : o.nome;
+            if (!contagem[id]) contagem[id] = { nome: o.nome, per: o.periodo || "?", mat: o.matricula, total: 0 };
             
-            // Lógica de saldo: Se a observação contiver "REDUÇÃO", subtrai 1, senão soma 1.
-            const valor = (o.observacao && o.observacao.includes("REDUÇÃO")) ? -1 : 1;
+            const obs = String(o.observacao || "").toUpperCase();
+            const valor = obs.includes("REDUÇÃO") ? -1 : 1;
             contagem[id].total += valor;
         });
 
+        let possuiAlunos = false;
         Object.values(contagem).forEach(d => {
-            // Só exibe se o saldo de esquecimentos for maior que zero
             if (d.total > 0) {
+                possuiAlunos = true;
                 const isCrit = d.total >= 3;
                 corpo.innerHTML += `<tr>
                     <td>${d.nome}</td><td>${d.per}º</td><td>${d.total}</td>
                     <td><span class="status-badge ${isCrit?'critical':''}">${isCrit?'ADVERTÊNCIA':'Normal'}</span></td>
                     <td>
                         <div style="display: flex; gap: 5px;">
-                            ${isCrit ? `<button class="btn btn-print" onclick="imprimirDoc('${d.nome}', '${d.per}')" title="Imprimir Advertência">🖨️</button>` : ''}
-                            <button class="btn btn-reduce" onclick="reduzirOcorrencia('${d.nome}', '${d.per}', '${d.mat}')" title="Reduzir Esquecimento">➖ Reduzir</button>
+                            ${isCrit ? `<button class="btn btn-print" onclick="imprimirDoc('${d.nome}', '${d.per}')">🖨️</button>` : ''}
+                            <button class="btn btn-reduce" onclick="reduzirOcorrencia('${d.nome}', '${d.per}', '${d.mat}')">➖ Reduzir</button>
                         </div>
                     </td>
                 </tr>`;
             }
         });
+
+        if (!possuiAlunos) corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sem ocorrências pendentes.</td></tr>';
     }
 
     function imprimirDoc(n, p) {
@@ -291,7 +292,7 @@
                 periodo: i.Período || i.PERIODO || i.periodo 
             }));
             localStorage.setItem('base_alunos', JSON.stringify(alunosBase));
-            alert("✅ Lista de alunos atualizada!");
+            alert("✅ Base de alunos atualizada!");
         };
         reader.readAsArrayBuffer(event.target.files[0]);
     }
