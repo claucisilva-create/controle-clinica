@@ -14,11 +14,10 @@
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; text-decoration: none; display: inline-block; transition: 0.3s; }
         .btn-import { background: #8e44ad; }
-        .btn-help { background: #7f8c8d; font-size: 12px; margin-top: 5px; }
         .btn-reg { background: var(--success); width: 100%; margin-top: 15px; }
         .btn-print { background: var(--primary); font-size: 11px; padding: 5px 10px; }
         .btn-reduce { background: var(--warning); font-size: 11px; padding: 5px 10px; }
-        input[type="text"], input[type="password"], textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; margin-top: 5px; font-family: inherit; }
+        input[type="text"], input[type="password"], textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; margin-top: 5px; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
         .status-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; }
@@ -26,7 +25,6 @@
         #lista-sugestoes { border: 1px solid #ddd; border-radius: 4px; max-height: 150px; overflow-y: auto; display: none; background: white; position: absolute; width: 960px; z-index: 10; }
         .item-sugestao { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
         .item-sugestao:hover { background: #f0f2f5; }
-        .ajuda-cadastro { margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 5px solid #ffc107; border-radius: 4px; display: none; }
 
         #area-impressao { display: none; }
         @media print {
@@ -35,21 +33,10 @@
             #area-impressao, #area-impressao * { visibility: visible; }
             #area-impressao { display: block !important; position: absolute; left: 0; top: 0; width: 100%; font-family: "Times New Roman", serif; color: black; }
             .page-break { page-break-before: always; }
-            .no-print { display: none !important; }
         }
-        .frente { width: 100%; }
-        .head-word { text-align: center; margin-bottom: 20px; }
-        .head-word p { margin: 2px 0; font-size: 16pt; font-weight: bold; }
-        .row-info { margin-bottom: 15px; font-size: 12pt; display: flex; gap: 50px; }
-        .tab-penalidade { width: 100%; border-collapse: collapse; margin: 15px 0; }
-        .tab-penalidade th, .tab-penalidade td { border: 1px solid black; padding: 8px; font-size: 10pt; text-align: center; }
-        .square { display: inline-block; width: 16px; height: 16px; border: 1px solid black; vertical-align: middle; line-height: 14px; font-weight: bold; }
-        .relato-box { border: 1px solid black; min-height: 140px; padding: 10px; margin-top: 5px; font-size: 11pt; text-align: justify; }
-        .footer-signs { margin-top: 50px; display: flex; justify-content: space-between; font-size: 9pt; text-align: center; }
-        .sign-line { width: 30%; border-top: 1px solid black; padding-top: 5px; }
-        .verso { width: 100%; padding-top: 30px; }
-        .titulo-ata { text-align: center; font-weight: bold; font-size: 16pt; text-decoration: underline; margin-bottom: 30px; }
-        .linha-ata { border-bottom: 1px solid black; height: 35px; margin-bottom: 5px; width: 100%; }
+        .frente, .verso { width: 100%; }
+        .sign-line { width: 30%; border-top: 1px solid black; padding-top: 5px; text-align: center; font-size: 9pt; }
+        .linha-ata { border-bottom: 1px solid black; height: 35px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -64,19 +51,11 @@
     </div>
 </div>
 
-<div id="main-content" class="container no-print">
+<div id="main-content" class="container">
     <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-                <h2>🏥 Controle de Autorização</h2>
-                <small>Clínica Odontológica - Gestão de Ocorrências</small>
-            </div>
-            <div style="text-align: right;">
-                <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📥 Importar Lista Alunos</button><br>
-                <a href="https://suprema.sharepoint.com/:x:/s/ClnicaOdonto/IQA9DWUTgucoQqfkhiMgGQ4QAd1yp_L1ktUKPBNr6AO_IEk?e=6OtV9N" target="_blank" class="btn btn-help">📄 Baixar Planilha Modelo</a>
-                <input type="file" id="fileInput" style="display:none" accept=".xlsx" onchange="importarPlanilha(event)">
-            </div>
-        </div>
+        <h2>🏥 Controle de Autorização</h2>
+        <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📥 Importar Lista Alunos</button>
+        <input type="file" id="fileInput" style="display:none" accept=".xlsx" onchange="importarPlanilha(event)">
     </div>
 
     <div class="card">
@@ -84,21 +63,11 @@
         <input type="text" id="inputBusca" placeholder="Pesquisar por nome ou matrícula..." onkeyup="filtrarAlunos(this.value)">
         <div id="lista-sugestoes"></div>
         
-        <div id="ajuda-cadastro" class="ajuda-cadastro">
-            <strong>Aluno não encontrado?</strong> Cadastre na planilha oficial.
-        </div>
-
         <div id="info-selecionado" style="display:none; margin-top:15px; padding:20px; background:#e8f4fd; border-radius: 8px;">
             <strong>Estudante:</strong> <span id="txt-nome"></span> (<span id="txt-mat"></span>)<br>
-            <div style="margin-top:10px;">
-                <label><b>Número do Protocolo:</b></label>
-                <input type="text" id="campo-protocolo" placeholder="Ex: 5436">
-            </div>
-            <div style="margin-top:10px;">
-                <label><b>Observação:</b></label>
-                <textarea id="campo-obs" rows="2" placeholder="Descreva o motivo..."></textarea>
-            </div>
-            <button class="btn btn-reg" id="btn-salvar" onclick="registrarOcorrencia()">Confirmar e Salvar na Planilha</button>
+            <input type="text" id="campo-protocolo" placeholder="Número do Protocolo" style="margin-top:10px;">
+            <textarea id="campo-obs" rows="2" placeholder="Observação..." style="margin-top:10px;"></textarea>
+            <button class="btn btn-reg" id="btn-salvar" onclick="registrarOcorrencia()">Confirmar e Salvar</button>
         </div>
     </div>
 
@@ -106,36 +75,25 @@
         <h3>Histórico Consolidado (Nuvem)</h3>
         <table>
             <thead><tr><th>Nome</th><th>Período</th><th>Esquecimentos</th><th>Status</th><th>Ações</th></tr></thead>
-            <tbody id="corpo-tabela"><tr><td colspan="5" style="text-align:center;">Sincronizando dados...</td></tr></tbody>
+            <tbody id="corpo-tabela"><tr><td colspan="5" style="text-align:center;">Carregando...</td></tr></tbody>
         </table>
     </div>
 </div>
 
 <div id="area-impressao">
     <div class="frente">
-        <div class="head-word"><p>Faculdade de Ciências Médicas</p><p>e da Saúde de Juiz de Fora</p></div>
-        <div class="row-info"><strong>Nome do Estudante:</strong> <span id="p-nome"></span></div>
-        <div class="row-info"><div><strong>Curso:</strong> Odontologia</div><div><strong>Período:</strong> <span id="p-periodo"></span>º</div><div><strong>Data:</strong> <span id="p-data"></span></div></div>
-        <p style="text-align: center; font-weight: bold; font-size: 11pt; margin: 15px 0;">Indicação – MARQUE UM X A PENALIDADE E A FORMA DE APLICAÇÃO</p>
-        <table class="tab-penalidade">
-            <thead><tr><th>PENALIDADE</th><th>FORMA DE APLICAÇÃO</th><th>INDICAÇÃO</th><th>COMPETÊNCIA DE APLICAÇÃO</th></tr></thead>
-            <tbody>
-                <tr><td>Advertência</td><td>ORAL</td><td><div class="square"></div></td><td>Professores, Coordenadores, NADD e DEPE</td></tr>
-                <tr><td><strong>Repreensão</strong></td><td><strong>POR ESCRITO</strong></td><td><div class="square">X</div></td><td>Coordenadores, NADD, COEPE, DEPE, Direção Geral.</td></tr>
-                <tr><td>Suspensão</td><td>POR ESCRITO</td><td><div class="square"></div></td><td>Coordenadores, NADD, COEPE, DEPE, Diretor Geral.</td></tr>
-                <tr><td>Desligamento</td><td>POR ESCRITO</td><td><div class="square"></div></td><td>1ª inst. Colegiado; 2ª inst. CEPE e Direção</td></tr>
-            </tbody>
-        </table>
-        <div><strong>RELATO DO CASO:</strong></div>
-        <div class="relato-box">O estudante acima identificado atingiu o limite de 03 (três) liberações excepcionais de material/instrumental por motivo de esquecimento de protocolo de autorização.</div>
-        <p style="margin-top: 30px;">Juiz de Fora, <span id="p-data-footer"></span></p>
-        <div class="footer-signs"><div class="sign-line">Estudante (s)</div><div class="sign-line">Coordenador de Curso</div><div class="sign-line">Responsável pela Aplicação</div></div>
+        <h2 style="text-align:center;">REPREENSÃO POR ESCRITO</h2>
+        <p><strong>Nome:</strong> <span id="p-nome"></span> | <strong>Período:</strong> <span id="p-periodo"></span>º</p>
+        <p>O estudante atingiu o limite de 3 liberações excepcionais por esquecimento de protocolo.</p>
+        <p>Data: <span id="p-data"></span></p>
+        <div style="margin-top:50px; display:flex; justify-content:space-between;">
+            <div class="sign-line">Estudante</div>
+            <div class="sign-line">Coordenador</div>
+        </div>
     </div>
-    <div class="verso page-break">
-        <div class="titulo-ata">ATA DE ATENDIMENTO AO ESTUDANTE</div>
-        <div style="margin-bottom: 25px; font-size: 12pt;"><strong>Estudante:</strong> <span id="v-nome"></span></div>
-        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
-        <div style="margin-top: 70px; display: flex; justify-content: space-around;"><div class="sign-line" style="width: 40%;">Assinatura do Estudante</div><div class="sign-line" style="width: 40%;">Assinatura do Responsável</div></div>
+    <div class="verso page-break" style="margin-top:50px;">
+        <h3 style="text-align:center;">ATA DE ATENDIMENTO</h3>
+        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
     </div>
 </div>
 
@@ -163,20 +121,15 @@
             const res = await fetch(URL_API);
             ocorrencias = await res.json();
             renderDashboard();
-        } catch (e) { console.error("Erro API:", e); }
+        } catch (e) { console.error(e); }
     }
 
     function filtrarAlunos(t) {
         const lista = document.getElementById('lista-sugestoes');
-        const ajuda = document.getElementById('ajuda-cadastro');
-        if (t.length < 2) { lista.style.display = 'none'; ajuda.style.display = 'none'; return; }
+        if (t.length < 2) { lista.style.display = 'none'; return; }
         const f = alunosBase.filter(a => a.nome && a.nome.toLowerCase().includes(t.toLowerCase())).slice(0, 5);
-        if(f.length === 0) { lista.style.display = 'none'; ajuda.style.display = 'block'; }
-        else {
-            ajuda.style.display = 'none';
-            lista.innerHTML = f.map(a => `<div class="item-sugestao" onclick="selecionar('${a.nome}', '${a.periodo}', '${a.matricula}')">${a.nome} (${a.periodo}º)</div>`).join('');
-            lista.style.display = 'block';
-        }
+        lista.innerHTML = f.map(a => `<div class="item-sugestao" onclick="selecionar('${a.nome}', '${a.periodo}', '${a.matricula}')">${a.nome}</div>`).join('');
+        lista.style.display = 'block';
     }
 
     function selecionar(n, p, m) {
@@ -185,26 +138,22 @@
         document.getElementById('txt-mat').innerText = m;
         document.getElementById('info-selecionado').style.display = 'block';
         document.getElementById('lista-sugestoes').style.display = 'none';
-        document.getElementById('inputBusca').value = n;
     }
 
     async function registrarOcorrencia() {
         const btn = document.getElementById('btn-salvar');
         const payload = { 
             token: TOKEN_SEGURANCA,
-            nome: selecionado.nome, 
-            periodo: selecionado.periodo, 
-            matricula: selecionado.matricula, 
+            nome: selecionado.nome, periodo: selecionado.periodo, matricula: selecionado.matricula, 
             data: new Date().toLocaleString('pt-BR'), 
             protocolo: document.getElementById('campo-protocolo').value, 
             observacao: document.getElementById('campo-obs').value 
         };
-        btn.disabled = true; btn.innerText = "⏳ Gravando...";
+        btn.disabled = true;
         try {
             await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
-            alert("✅ Registro salvo!");
             location.reload();
-        } catch (e) { alert("❌ Erro."); btn.disabled = false; btn.innerText = "Confirmar e Salvar na Planilha"; }
+        } catch (e) { alert("Erro ao salvar."); btn.disabled = false; }
     }
 
     async function reduzirOcorrencia(nome, periodo, matricula) {
@@ -214,12 +163,17 @@
             nome: nome, periodo: periodo, matricula: matricula, 
             data: new Date().toLocaleString('pt-BR'), 
             protocolo: "ESTORNO", 
-            observacao: "REDUÇÃO: Aluno apresentou o protocolo pendente." 
+            observacao: "REDUCAO: Aluno apresentou o protocolo pendente." 
         };
         try {
             await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
             location.reload();
-        } catch (e) { alert("❌ Erro."); }
+        } catch (e) { alert("Erro."); }
+    }
+
+    // FUNÇÃO REFORÇADA PARA LIMPAR NOMES DE COLUNAS
+    function limparChave(str) {
+        return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
     }
 
     function renderDashboard() {
@@ -227,64 +181,57 @@
         corpo.innerHTML = '';
         
         if (!ocorrencias || ocorrencias.length === 0) {
-            corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum registro na planilha.</td></tr>';
+            corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum dado na planilha.</td></tr>';
             return;
         }
 
         const contagem = {};
-        ocorrencias.forEach(o => {
-            // AJUSTE CRUCIAL: Mapeia as chaves independente de maiúsculas/minúsculas
-            const dNome = o.Nome || o.nome;
-            const dMat = o.Matricula || o.matricula;
-            const dPer = o.Periodo || o.periodo;
-            const dObs = o.Observacao || o.observacao || "";
 
-            if (!dNome) return;
-            
-            const id = (dMat && dMat !== "") ? dMat : dNome;
-            
+        ocorrencias.forEach(o => {
+            // Mapeia o objeto o para chaves limpas (nome, matricula, observacao)
+            let objLimpo = {};
+            Object.keys(o).forEach(key => { objLimpo[limparChave(key)] = o[key]; });
+
+            const nome = objLimpo.nome;
+            if (!nome) return;
+
+            const id = objLimpo.matricula || nome;
             if (!contagem[id]) {
-                contagem[id] = { nome: dNome, per: dPer || "?", mat: dMat, total: 0 };
+                contagem[id] = { nome: nome, per: objLimpo.periodo || "?", mat: objLimpo.matricula || "", total: 0 };
             }
             
-            const obsLimpa = String(dObs).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            
-            if (obsLimpa.includes("REDUCAO")) {
+            const obs = limparChave(String(objLimpo.observacao || ""));
+            if (obs.includes("reducao")) {
                 contagem[id].total -= 1;
             } else {
                 contagem[id].total += 1;
             }
         });
 
-        let temDados = false;
+        let temAlunos = false;
         Object.values(contagem).forEach(d => {
             if (d.total > 0) {
-                temDados = true;
+                temAlunos = true;
                 const isCrit = d.total >= 3;
                 corpo.innerHTML += `<tr>
                     <td>${d.nome}</td><td>${d.per}º</td><td>${d.total}</td>
                     <td><span class="status-badge ${isCrit?'critical':''}">${isCrit?'ADVERTÊNCIA':'Normal'}</span></td>
                     <td>
-                        <div style="display: flex; gap: 5px;">
-                            ${isCrit ? `<button class="btn btn-print" onclick="imprimirDoc('${d.nome}', '${d.per}')">🖨️</button>` : ''}
-                            <button class="btn btn-reduce" onclick="reduzirOcorrencia('${d.nome}', '${d.per}', '${d.mat}')">➖ Reduzir</button>
-                        </div>
+                        <button class="btn btn-reduce" onclick="reduzirOcorrencia('${d.nome}', '${d.per}', '${d.mat}')">➖ Reduzir</button>
+                        ${isCrit ? `<button class="btn btn-print" onclick="imprimirDoc('${d.nome}', '${d.per}')">🖨️</button>` : ''}
                     </td>
                 </tr>`;
             }
         });
 
-        if (!temDados) corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Todos os saldos estão zerados.</td></tr>';
+        if (!temAlunos) corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Saldos zerados.</td></tr>';
     }
 
     function imprimirDoc(n, p) {
-        const hoje = new Date().toLocaleDateString('pt-BR');
         document.getElementById('p-nome').innerText = n;
-        document.getElementById('v-nome').innerText = n;
         document.getElementById('p-periodo').innerText = p;
-        document.getElementById('p-data').innerText = hoje;
-        document.getElementById('p-data-footer').innerText = hoje;
-        setTimeout(() => { window.print(); }, 500);
+        document.getElementById('p-data').innerText = new Date().toLocaleDateString('pt-BR');
+        window.print();
     }
 
     function importarPlanilha(event) {
@@ -299,7 +246,7 @@
                 periodo: i.Período || i.PERIODO || i.periodo 
             }));
             localStorage.setItem('base_alunos', JSON.stringify(alunosBase));
-            alert("✅ Base atualizada!");
+            alert("Base atualizada!");
         };
         reader.readAsArrayBuffer(event.target.files[0]);
     }
