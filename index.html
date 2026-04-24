@@ -85,8 +85,7 @@
         <div id="lista-sugestoes"></div>
         
         <div id="ajuda-cadastro" class="ajuda-cadastro">
-            <strong>Aluno não encontrado?</strong><br>
-            Cadastre o aluno na planilha oficial do Teams antes de registrar.
+            <strong>Aluno não encontrado?</strong> Cadastre na planilha oficial.
         </div>
 
         <div id="info-selecionado" style="display:none; margin-top:15px; padding:20px; background:#e8f4fd; border-radius: 8px;">
@@ -107,7 +106,7 @@
         <h3>Histórico Consolidado (Nuvem)</h3>
         <table>
             <thead><tr><th>Nome</th><th>Período</th><th>Esquecimentos</th><th>Status</th><th>Ações</th></tr></thead>
-            <tbody id="corpo-tabela"><tr><td colspan="5">Sincronizando com a planilha...</td></tr></tbody>
+            <tbody id="corpo-tabela"><tr><td colspan="5" style="text-align:center;">Sincronizando dados...</td></tr></tbody>
         </table>
     </div>
 </div>
@@ -128,7 +127,7 @@
             </tbody>
         </table>
         <div><strong>RELATO DO CASO:</strong></div>
-        <div class="relato-box">O estudante acima identificado atingiu o limite de 03 (três) liberações excepcionais de material/instrumental por motivo de esquecimento de protocolo de autorização. Conforme as normas da Clínica Odontológica, a reincidência resulta na aplicação desta penalidade formal por escrito.</div>
+        <div class="relato-box">O estudante acima identificado atingiu o limite de 03 (três) liberações excepcionais de material/instrumental por motivo de esquecimento de protocolo de autorização.</div>
         <p style="margin-top: 30px;">Juiz de Fora, <span id="p-data-footer"></span></p>
         <div class="footer-signs"><div class="sign-line">Estudante (s)</div><div class="sign-line">Coordenador de Curso</div><div class="sign-line">Responsável pela Aplicação</div></div>
     </div>
@@ -142,7 +141,6 @@
 
 <script>
     const users = { "Diana": "246811", "Claus": "Cl@86372" };
-    // CONFIGURAÇÕES DE CONEXÃO
     const URL_API = "https://script.google.com/macros/s/AKfycbxK5CJiIcfQJzJ_ZY1PKnowRTliCpVzq5Zo7VGM20mXl3k0ptWrrGc6UN8c0VOVcpezeQ/exec";
     const TOKEN_SEGURANCA = "SuaSenhaSecreta123";
 
@@ -161,15 +159,11 @@
     let selecionado = null;
 
     async function carregarDados() {
-        const corpo = document.getElementById('corpo-tabela');
         try {
             const res = await fetch(URL_API);
             ocorrencias = await res.json();
             renderDashboard();
-        } catch (e) { 
-            corpo.innerHTML = '<tr><td colspan="5" style="color:red; text-align:center;">Erro ao sincronizar com Google Sheets. Verifique o console.</td></tr>';
-            console.error(e); 
-        }
+        } catch (e) { console.error("Erro API:", e); }
     }
 
     function filtrarAlunos(t) {
@@ -210,11 +204,11 @@
             await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
             alert("✅ Registro salvo!");
             location.reload();
-        } catch (e) { alert("❌ Erro ao salvar."); btn.disabled = false; btn.innerText = "Confirmar e Salvar na Planilha"; }
+        } catch (e) { alert("❌ Erro."); btn.disabled = false; btn.innerText = "Confirmar e Salvar na Planilha"; }
     }
 
     async function reduzirOcorrencia(nome, periodo, matricula) {
-        if (!confirm(`Deseja abater 1 esquecimento para ${nome}?`)) return;
+        if (!confirm(`Reduzir 1 esquecimento para ${nome}?`)) return;
         const payload = { 
             token: TOKEN_SEGURANCA,
             nome: nome, periodo: periodo, matricula: matricula, 
@@ -224,9 +218,8 @@
         };
         try {
             await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
-            alert("✅ Redução registrada!");
             location.reload();
-        } catch (e) { alert("❌ Erro na redução."); }
+        } catch (e) { alert("❌ Erro."); }
     }
 
     function renderDashboard() {
@@ -234,25 +227,34 @@
         corpo.innerHTML = '';
         
         if (!ocorrencias || ocorrencias.length === 0) {
-            corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum registro encontrado.</td></tr>';
+            corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum registro na planilha.</td></tr>';
             return;
         }
 
         const contagem = {};
         ocorrencias.forEach(o => {
             if (!o.nome) return;
-            const id = (o.matricula && o.matricula !== "undefined") ? o.matricula : o.nome;
-            if (!contagem[id]) contagem[id] = { nome: o.nome, per: o.periodo || "?", mat: o.matricula, total: 0 };
+            // Usa matrícula como ID principal para evitar erros com nomes iguais
+            const id = (o.matricula && o.matricula !== "") ? o.matricula : o.nome;
             
-            const obs = String(o.observacao || "").toUpperCase();
-            const valor = obs.includes("REDUÇÃO") ? -1 : 1;
-            contagem[id].total += valor;
+            if (!contagem[id]) {
+                contagem[id] = { nome: o.nome, per: o.periodo || "?", mat: o.matricula, total: 0 };
+            }
+            
+            // Lógica Robusta: Se a observação contiver a palavra REDUCAO (sem acento ou com acento)
+            const obsLimpa = String(o.observacao || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            
+            if (obsLimpa.includes("REDUCAO")) {
+                contagem[id].total -= 1;
+            } else {
+                contagem[id].total += 1;
+            }
         });
 
-        let possuiAlunos = false;
+        let temDados = false;
         Object.values(contagem).forEach(d => {
             if (d.total > 0) {
-                possuiAlunos = true;
+                temDados = true;
                 const isCrit = d.total >= 3;
                 corpo.innerHTML += `<tr>
                     <td>${d.nome}</td><td>${d.per}º</td><td>${d.total}</td>
@@ -267,7 +269,7 @@
             }
         });
 
-        if (!possuiAlunos) corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sem ocorrências pendentes.</td></tr>';
+        if (!temDados) corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Todos os saldos estão zerados.</td></tr>';
     }
 
     function imprimirDoc(n, p) {
@@ -292,7 +294,7 @@
                 periodo: i.Período || i.PERIODO || i.periodo 
             }));
             localStorage.setItem('base_alunos', JSON.stringify(alunosBase));
-            alert("✅ Base de alunos atualizada!");
+            alert("✅ Base atualizada!");
         };
         reader.readAsArrayBuffer(event.target.files[0]);
     }
