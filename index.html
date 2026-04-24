@@ -233,16 +233,21 @@
 
         const contagem = {};
         ocorrencias.forEach(o => {
-            if (!o.nome) return;
-            // Usa matrícula como ID principal para evitar erros com nomes iguais
-            const id = (o.matricula && o.matricula !== "") ? o.matricula : o.nome;
+            // AJUSTE CRUCIAL: Mapeia as chaves independente de maiúsculas/minúsculas
+            const dNome = o.Nome || o.nome;
+            const dMat = o.Matricula || o.matricula;
+            const dPer = o.Periodo || o.periodo;
+            const dObs = o.Observacao || o.observacao || "";
+
+            if (!dNome) return;
+            
+            const id = (dMat && dMat !== "") ? dMat : dNome;
             
             if (!contagem[id]) {
-                contagem[id] = { nome: o.nome, per: o.periodo || "?", mat: o.matricula, total: 0 };
+                contagem[id] = { nome: dNome, per: dPer || "?", mat: dMat, total: 0 };
             }
             
-            // Lógica Robusta: Se a observação contiver a palavra REDUCAO (sem acento ou com acento)
-            const obsLimpa = String(o.observacao || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const obsLimpa = String(dObs).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             
             if (obsLimpa.includes("REDUCAO")) {
                 contagem[id].total -= 1;
