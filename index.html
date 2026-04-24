@@ -5,7 +5,7 @@
     <title>Sistema de Controle de Autorização - Suprema</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        /* ESTILOS DE TELA (SISTEMA) */
+        /* ESTILOS DE TELA */
         :root { --primary: #2c3e50; --danger: #e74c3c; --success: #27ae60; --info: #3498db; }
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
         #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; display: flex; justify-content: center; align-items: center; z-index: 9999; }
@@ -18,7 +18,7 @@
         .btn-help { background: #7f8c8d; font-size: 12px; margin-top: 5px; }
         .btn-reg { background: var(--success); width: 100%; margin-top: 15px; }
         .btn-print { background: var(--primary); font-size: 11px; padding: 5px 10px; }
-        input[type="text"], input[type="password"], textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; margin-top: 5px; }
+        input[type="text"], input[type="password"], textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; margin-top: 5px; font-family: inherit; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
         .status-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; }
@@ -28,7 +28,7 @@
         .item-sugestao:hover { background: #f0f2f5; }
         .ajuda-cadastro { margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 5px solid #ffc107; border-radius: 4px; display: none; }
 
-        /* ESTILOS DE IMPRESSÃO (A4 PAISAGEM) */
+        /* ESTILOS DE IMPRESSÃO */
         #area-impressao { display: none; }
         @media print {
             @page { size: landscape; margin: 1cm; }
@@ -145,6 +145,7 @@
 
 <script>
     const users = { "Diana": "246811", "Claus": "Cl@86372" };
+    // COLOQUE ABAIXO A SUA NOVA URL DE IMPLANTAÇÃO
     const URL_API = "https://script.google.com/macros/s/AKfycbxK5CJiIcfQJzJ_ZY1PKnowRTliCpVzq5Zo7VGM20mXl3k0ptWrrGc6UN8c0VOVcpezeQ/exec";
 
     function autenticar() {
@@ -193,22 +194,34 @@
 
     async function registrarOcorrencia() {
         const btn = document.getElementById('btn-salvar');
-        const payload = { ...selecionado, data: new Date().toLocaleString('pt-BR'), protocolo: document.getElementById('campo-protocolo').value, observacao: document.getElementById('campo-obs').value };
+        const payload = { 
+            nome: selecionado.nome, 
+            periodo: selecionado.periodo, 
+            matricula: selecionado.matricula, 
+            data: new Date().toLocaleString('pt-BR'), 
+            protocolo: document.getElementById('campo-protocolo').value, 
+            observacao: document.getElementById('campo-obs').value 
+        };
         btn.disabled = true; btn.innerText = "⏳ Gravando...";
         try {
             await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
             alert("✅ Salvo com sucesso!");
             location.reload();
-        } catch (e) { alert("❌ Erro ao salvar."); btn.disabled = false; }
+        } catch (e) { alert("❌ Erro ao salvar."); btn.disabled = false; btn.innerText = "Confirmar e Salvar na Planilha"; }
     }
 
     function renderDashboard() {
         const corpo = document.getElementById('corpo-tabela');
         corpo.innerHTML = '';
+        if (!ocorrencias || ocorrencias.length === 0) {
+            corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum registro encontrado.</td></tr>';
+            return;
+        }
         const contagem = {};
         ocorrencias.forEach(o => {
             const id = o.matricula || o.nome;
-            contagem[id] = contagem[id] || { nome: o.nome, per: o.periodo, total: 0 };
+            const perVal = o.periodo || "?";
+            if (!contagem[id]) contagem[id] = { nome: o.nome, per: perVal, total: 0 };
             contagem[id].total++;
         });
         Object.values(contagem).forEach(d => {
