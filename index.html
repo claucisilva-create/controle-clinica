@@ -8,24 +8,35 @@
     <style>
         :root { --primary: #2c3e50; --danger: #e74c3c; --success: #27ae60; --info: #3498db; --warning: #f39c12; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
+        
+        /* Login */
         #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; display: flex; justify-content: center; align-items: center; z-index: 9999; }
         .login-card { background: white; padding: 40px; border-radius: 10px; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
         #main-content { display: none; }
+
         .container { max-width: 1000px; margin: auto; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        
+        /* Botões */
         .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
         .btn-import { background: #8e44ad; margin-bottom: 10px; }
         .btn-reg { background: var(--success); width: 100%; margin-top: 15px; }
-        .btn-reduce { background: var(--warning); font-size: 11px; padding: 5px 10px; }
-        .btn-print { background: var(--primary); font-size: 11px; padding: 5px 10px; }
+        .btn-reduce { background: var(--warning); font-size: 11px; padding: 5px 10px; color: #fff; }
+        .btn-print { background: var(--primary); font-size: 11px; padding: 5px 10px; margin-left: 5px; }
+
         input, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; margin-top: 5px; }
+        
+        /* Tabela */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
         .status-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
         .critical { background: var(--danger); color: white; }
+
+        /* Sugestões */
         #lista-sugestoes { border: 1px solid #ddd; border-top: none; max-height: 200px; overflow-y: auto; display: none; background: white; position: absolute; z-index: 100; width: calc(100% - 40px); max-width: 960px; }
         .item-sugestao { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; }
         .item-sugestao:hover { background: #f8f9fa; }
+
         @media print { body * { visibility: hidden; } #area-impressao, #area-impressao * { visibility: visible; } #area-impressao { position: absolute; left: 0; top: 0; width: 100%; display: block !important; } }
         #area-impressao { display: none; }
     </style>
@@ -51,13 +62,16 @@
 
     <div class="card" style="position: relative;">
         <h3>Registrar Novo Esquecimento</h3>
-        <input type="text" id="inputBusca" placeholder="Comece a digitar o nome do aluno..." onkeyup="filtrarAlunos(this.value)">
+        <input type="text" id="inputBusca" placeholder="Digite o nome do aluno..." onkeyup="filtrarAlunos(this.value)">
         <div id="lista-sugestoes"></div>
+        
         <div id="info-selecionado" style="display:none; margin-top:15px; padding:20px; background:#eef2f7; border-radius: 8px; border-left: 5px solid var(--info);">
             <strong>Estudante:</strong> <span id="txt-nome"></span><br>
             <strong>Matrícula:</strong> <span id="txt-mat"></span> | <strong>Período:</strong> <span id="txt-per"></span>º<br>
+            
             <input type="text" id="campo-protocolo" placeholder="Número do Protocolo">
-            <textarea id="campo-obs" rows="2" placeholder="Observações"></textarea>
+            <textarea id="campo-obs" rows="2" placeholder="Observações (opcional)"></textarea>
+            
             <button class="btn btn-reg" id="btn-salvar" onclick="registrarOcorrencia()">Confirmar Registro</button>
         </div>
     </div>
@@ -75,31 +89,30 @@
                 </tr>
             </thead>
             <tbody id="corpo-tabela">
-                <tr><td colspan="5" style="text-align:center;">Carregando...</td></tr>
+                <tr><td colspan="5" style="text-align:center;">Carregando dados da planilha...</td></tr>
             </tbody>
         </table>
     </div>
 </div>
 
 <div id="area-impressao">
+    <!-- Layout de Advertência para Impressão -->
     <div style="padding: 50px; border: 2px solid black;">
         <h1 style="text-align:center;">ADVERTÊNCIA DISCIPLINAR</h1>
-        <p>Estudante: <strong id="p-nome"></strong> | Período: <strong id="p-periodo"></strong></p>
-        <p>Motivo: Excesso de liberações excepcionais (3 ou mais).</p>
+        <p style="margin-top:40px;">Comunicamos que o(a) estudante <strong><span id="p-nome"></span></strong>, do <strong><span id="p-periodo"></span>º Período</strong>, atingiu o limite de 3 liberações excepcionais.</p>
         <p>Data: <span id="p-data"></span></p>
         <br><br><br>
         <div style="display:flex; justify-content:space-around;">
             <div style="border-top: 1px solid black; width: 200px; text-align:center;">Assinatura Estudante</div>
-            <div style="border-top: 1px solid black; width: 200px; text-align:center;">Assinatura Coordenação</div>
+            <div style="border-top: 1px solid black; width: 200px; text-align:center;">Coordenação</div>
         </div>
     </div>
 </div>
 
 <script>
+    // --- CONFIGURAÇÃO ---
     const users = { "Diana": "246811", "Claus": "Cl@86372" };
-    
-    // --- ATENÇÃO: COLE SUA URL ABAIXO ENTRE AS ASPAS ---
-    const URL_API = "https://script.google.com/macros/s/AKfycbwK5pbBK9kidRDjTa9e3JWCav2-U5y-0EQ2ixiI50rLA50Gj9jxBaVnRdq_SDWnp2dzJQ/exec"; 
+    const URL_API = "SUA_URL_DO_GOOGLE_SCRIPT_AQUI"; 
     const TOKEN_SEGURANCA = "SuaSenhaSecreta123";
 
     let alunosBase = JSON.parse(localStorage.getItem('base_alunos')) || [];
@@ -113,9 +126,7 @@
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
             carregarDados();
-        } else {
-            document.getElementById('login-error').style.display = 'block';
-        }
+        } else { document.getElementById('login-error').style.display = 'block'; }
     }
 
     function filtrarAlunos(t) {
@@ -139,27 +150,26 @@
     }
 
     async function registrarOcorrencia() {
-        if(!URL_API || URL_API.includes("COLE_AQUI")) { alert("Erro: URL da API não configurada!"); return; }
         const btn = document.getElementById('btn-salvar');
-        const protocolo = document.getElementById('campo-protocolo').value;
-        if(!protocolo) { alert("Informe o protocolo!"); return; }
+        const prot = document.getElementById('campo-protocolo').value;
+        if(!prot) { alert("Informe o protocolo!"); return; }
 
         const payload = { 
             token: TOKEN_SEGURANCA,
             nome: selecionado.nome, periodo: selecionado.periodo, matricula: selecionado.matricula, 
-            data: new Date().toLocaleString('pt-BR'), protocolo: protocolo, observacao: document.getElementById('campo-obs').value 
+            data: new Date().toLocaleString('pt-BR'), protocolo: prot, 
+            observacao: document.getElementById('campo-obs').value 
         };
 
         btn.disabled = true;
         try {
             await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
-            alert("Sucesso!");
+            alert("Salvo com sucesso!");
             location.reload();
         } catch (e) { alert("Erro ao salvar."); btn.disabled = false; }
     }
 
     async function reduzirOcorrencia(nome, matricula) {
-        if(!URL_API || URL_API.includes("COLE_AQUI")) { alert("Erro: URL da API não configurada!"); return; }
         if (!confirm(`Deseja EXCLUIR o último registro de ${nome}?`)) return;
         const payload = { token: TOKEN_SEGURANCA, nome: nome, matricula: matricula, protocolo: "ESTORNO" };
         try {
@@ -170,16 +180,12 @@
     }
 
     async function carregarDados() {
-        if(!URL_API || URL_API.includes("COLE_AQUI")) { 
-            document.getElementById('corpo-tabela').innerHTML = '<tr><td colspan="5" style="color:orange">Configure a URL_API no código.</td></tr>';
-            return; 
-        }
         try {
             const res = await fetch(URL_API);
             ocorrencias = await res.json();
             renderizarDashboard();
         } catch (e) {
-            document.getElementById('corpo-tabela').innerHTML = '<tr><td colspan="5" style="color:red">Erro ao carregar dados da planilha.</td></tr>';
+            document.getElementById('corpo-tabela').innerHTML = '<tr><td colspan="5" style="color:red">Erro ao carregar dados.</td></tr>';
         }
     }
 
@@ -189,13 +195,21 @@
         const consolidado = {};
 
         ocorrencias.forEach(o => {
+            // NORMALIZAÇÃO DE COLUNAS (CORREÇÃO DO UNDEFINED)
             let item = {};
-            Object.keys(o).forEach(k => item[k.toLowerCase()] = o[k]);
-            const id = item.matricula || item.nome;
-            if (!consolidado[id]) {
-                consolidado[id] = { nome: item.nome, per: item.periodo, mat: item.matricula, total: 0 };
+            Object.keys(o).forEach(k => {
+                let chaveLimpa = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+                item[chaveLimpa] = o[k];
+            });
+
+            const nomeVal = item.nome || "Não Identificado";
+            const matVal = item.matricula || nomeVal;
+            const perVal = item.periodo || item.per || item.fase || "0";
+
+            if (!consolidado[matVal]) {
+                consolidado[matVal] = { nome: nomeVal, per: perVal, mat: matVal, total: 0 };
             }
-            consolidado[id].total += 1;
+            consolidado[matVal].total += 1;
         });
 
         let totalVisivel = 0;
@@ -204,7 +218,9 @@
                 totalVisivel++;
                 const critico = d.total >= 3;
                 corpo.innerHTML += `<tr>
-                    <td>${d.nome}</td><td>${d.per}º</td><td><strong>${d.total}</strong></td>
+                    <td>${d.nome}</td>
+                    <td>${d.per}º</td>
+                    <td><strong>${d.total}</strong></td>
                     <td><span class="status-badge ${critico?'critical':''}">${critico?'ADVERTÊNCIA':'Normal'}</span></td>
                     <td>
                         <button class="btn btn-reduce" onclick="reduzirOcorrencia('${d.nome}', '${d.mat}')">➖ Reduzir</button>
@@ -213,7 +229,7 @@
                 </tr>`;
             }
         });
-        if (totalVisivel === 0) corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum registro.</td></tr>';
+        if (totalVisivel === 0) corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum registro encontrado.</td></tr>';
     }
 
     function prepararImpressao(n, p) {
@@ -235,7 +251,7 @@
                 periodo: i.Período || i.PERIODO || i.periodo 
             }));
             localStorage.setItem('base_alunos', JSON.stringify(alunosBase));
-            alert("Lista carregada!");
+            alert("Lista de alunos carregada!");
         };
         reader.readAsArrayBuffer(event.target.files[0]);
     }
