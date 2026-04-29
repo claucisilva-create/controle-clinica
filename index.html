@@ -2,106 +2,172 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Controle de Autorização - Suprema</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary: #2c3e50; --danger: #e74c3c; --success: #27ae60; --info: #3498db; --warning: #e67e22; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
+        :root { --primary: #2c3e50; --danger: #e74c3c; --success: #27ae60; --info: #3498db; --warning: #f39c12; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
+        
+        /* Telas */
         #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; display: flex; justify-content: center; align-items: center; z-index: 9999; }
-        .login-card { background: white; padding: 40px; border-radius: 10px; width: 100%; max-width: 350px; text-align: center; }
+        .login-card { background: white; padding: 40px; border-radius: 10px; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
         #main-content { display: none; }
+
         .container { max-width: 1000px; margin: auto; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; text-decoration: none; display: inline-block; transition: 0.3s; }
-        .btn-import { background: #8e44ad; }
+        
+        /* Botões */
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
+        .btn-import { background: #8e44ad; margin-bottom: 10px; }
         .btn-reg { background: var(--success); width: 100%; margin-top: 15px; }
-        .btn-print { background: var(--primary); font-size: 11px; padding: 5px 10px; }
         .btn-reduce { background: var(--warning); font-size: 11px; padding: 5px 10px; }
-        input[type="text"], input[type="password"], textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; margin-top: 5px; }
+        .btn-print { background: var(--primary); font-size: 11px; padding: 5px 10px; }
+
+        input, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; margin-top: 5px; }
+        
+        /* Tabela */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
-        .status-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
         .critical { background: var(--danger); color: white; }
-        #lista-sugestoes { border: 1px solid #ddd; border-radius: 4px; max-height: 150px; overflow-y: auto; display: none; background: white; position: absolute; width: 960px; z-index: 10; }
-        .item-sugestao { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
-        .item-sugestao:hover { background: #f0f2f5; }
 
+        /* Sugestões de Busca */
+        #lista-sugestoes { border: 1px solid #ddd; border-top: none; max-height: 200px; overflow-y: auto; display: none; background: white; position: absolute; z-index: 100; width: calc(100% - 40px); max-width: 960px; }
+        .item-sugestao { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .item-sugestao:hover { background: #f8f9fa; }
+
+        @media print { body * { visibility: hidden; } #area-impressao, #area-impressao * { visibility: visible; } #area-impressao { position: absolute; left: 0; top: 0; width: 100%; display: block !important; } }
         #area-impressao { display: none; }
-        @media print {
-            @page { size: landscape; margin: 1cm; }
-            body * { visibility: hidden; }
-            #area-impressao, #area-impressao * { visibility: visible; }
-            #area-impressao { display: block !important; position: absolute; left: 0; top: 0; width: 100%; font-family: "Times New Roman", serif; color: black; }
-            .page-break { page-break-before: always; }
-        }
-        .frente, .verso { width: 100%; }
-        .sign-line { width: 30%; border-top: 1px solid black; padding-top: 5px; text-align: center; font-size: 9pt; }
-        .linha-ata { border-bottom: 1px solid black; height: 35px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
+<!-- TELA DE LOGIN -->
 <div id="login-screen">
     <div class="login-card">
-        <h2>Acesso Restrito</h2>
+        <h2>🔒 Acesso</h2>
         <input type="text" id="user" placeholder="Usuário">
         <input type="password" id="pass" placeholder="Senha">
-        <button class="btn" style="background: var(--success); width: 100%; margin-top: 10px;" onclick="autenticar()">Entrar</button>
-        <p id="login-error" style="color:red; display:none; margin-top:10px;">Acesso negado!</p>
+        <button class="btn" style="background: var(--success); width: 100%; margin-top: 15px;" onclick="autenticar()">Entrar</button>
+        <p id="login-error" style="color:red; display:none; margin-top:10px;">Credenciais inválidas!</p>
     </div>
 </div>
 
+<!-- CONTEÚDO PRINCIPAL -->
 <div id="main-content" class="container">
     <div class="card">
-        <h2>🏥 Controle de Autorização</h2>
-        <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📥 Importar Lista Alunos</button>
+        <h2>🏥 Controle de Autorização Clínica</h2>
+        <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📥 Importar Lista de Alunos (Excel)</button>
         <input type="file" id="fileInput" style="display:none" accept=".xlsx" onchange="importarPlanilha(event)">
     </div>
 
-    <div class="card">
-        <h3>Nova Liberação Excepcional</h3>
-        <input type="text" id="inputBusca" placeholder="Pesquisar por nome ou matrícula..." onkeyup="filtrarAlunos(this.value)">
+    <div class="card" style="position: relative;">
+        <h3>Registrar Novo Esquecimento</h3>
+        <input type="text" id="inputBusca" placeholder="Comece a digitar o nome do aluno..." onkeyup="filtrarAlunos(this.value)">
         <div id="lista-sugestoes"></div>
         
-        <div id="info-selecionado" style="display:none; margin-top:15px; padding:20px; background:#e8f4fd; border-radius: 8px;">
-            <strong>Estudante:</strong> <span id="txt-nome"></span> (<span id="txt-mat"></span>)<br>
-            <input type="text" id="campo-protocolo" placeholder="Número do Protocolo" style="margin-top:10px;">
-            <textarea id="campo-obs" rows="2" placeholder="Observação..." style="margin-top:10px;"></textarea>
-            <button class="btn btn-reg" id="btn-salvar" onclick="registrarOcorrencia()">Confirmar e Salvar</button>
+        <div id="info-selecionado" style="display:none; margin-top:15px; padding:20px; background:#eef2f7; border-radius: 8px; border-left: 5px solid var(--info);">
+            <strong>Estudante Selecionado:</strong> <span id="txt-nome"></span><br>
+            <strong>Matrícula:</strong> <span id="txt-mat"></span> | <strong>Período:</strong> <span id="txt-per"></span>º<br>
+            
+            <input type="text" id="campo-protocolo" placeholder="Número do Protocolo Gerado">
+            <textarea id="campo-obs" rows="2" placeholder="Observações adicionais (opcional)"></textarea>
+            
+            <button class="btn btn-reg" id="btn-salvar" onclick="registrarOcorrencia()">Confirmar Registro</button>
         </div>
     </div>
 
     <div class="card">
-        <h3>Histórico Consolidado (Nuvem)</h3>
+        <h3>Histórico de Esquecimentos (Saldos Atuais)</h3>
         <table>
-            <thead><tr><th>Nome</th><th>Período</th><th>Esquecimentos</th><th>Status</th><th>Ações</th></tr></thead>
-            <tbody id="corpo-tabela"><tr><td colspan="5" style="text-align:center;">Carregando dados...</td></tr></tbody>
+            <thead>
+                <tr>
+                    <th>Nome do Aluno</th>
+                    <th>Período</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="corpo-tabela">
+                <tr><td colspan="5" style="text-align:center;">Carregando dados da nuvem...</td></tr>
+            </tbody>
         </table>
     </div>
 </div>
 
+<!-- ÁREA DE IMPRESSÃO (ADVERTÊNCIA) -->
 <div id="area-impressao">
-    <div class="frente">
-        <h2 style="text-align:center;">REPREENSÃO POR ESCRITO</h2>
-        <p><strong>Nome:</strong> <span id="p-nome"></span> | <strong>Período:</strong> <span id="p-periodo"></span>º</p>
-        <p>O estudante atingiu o limite de 3 liberações excepcionais por esquecimento de protocolo.</p>
-        <p>Data: <span id="p-data"></span></p>
-        <div style="margin-top:50px; display:flex; justify-content:space-between;">
-            <div class="sign-line">Estudante</div>
-            <div class="sign-line">Coordenador</div>
+    <div style="padding: 50px; border: 2px solid black;">
+        <h1 style="text-align:center;">ADVERTÊNCIA DISCIPLINAR</h1>
+        <p style="margin-top:40px;">Comunicamos que o(a) estudante <strong><span id="p-nome"></span></strong>, do <strong><span id="p-periodo"></span>º Período</strong>, atingiu o limite de 3 (três) liberações excepcionais por esquecimento de protocolo de atendimento.</p>
+        <p>Fica o estudante ciente de que novas ocorrências poderão acarretar em medidas administrativas superiores conforme o regimento interno.</p>
+        <p style="margin-top:30px;">Data: <span id="p-data"></span></p>
+        <br><br><br>
+        <div style="display:flex; justify-content:space-around;">
+            <div style="border-top: 1px solid black; width: 200px; text-align:center;">Assinatura Estudante</div>
+            <div style="border-top: 1px solid black; width: 200px; text-align:center;">Assinatura Coordenação</div>
         </div>
-    </div>
-    <div class="verso page-break" style="margin-top:50px;">
-        <h3 style="text-align:center;">ATA DE ATENDIMENTO</h3>
-        <div class="linha-ata"></div><div class="linha-ata"></div><div class="linha-ata"></div>
     </div>
 </div>
 
 <script>
+    // Configurações
     const users = { "Diana": "246811", "Claus": "Cl@86372" };
-    const URL_API = "https://script.google.com/macros/s/AKfycbyaCHs9j3UEz7TV5arT8jSUeEu-cJiii8FJNP9HhCU7CuU5R-diPQRfdEra1WPeaHnN5A/exec";
+    const URL_API = "const TOKEN_SEGURANCA = "SuaSenhaSecreta123";
+
+function doPost(e) {
+  const data = JSON.parse(e.postData.contents);
+  if (data.token !== TOKEN_SEGURANCA) return ContentService.createTextOutput("Erro: Token Inválido");
+  
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Ocorrencias");
+  const values = sheet.getDataRange().getValues();
+
+  // --- OPÇÃO 1: EXCLUIR (Quando o botão 'Reduzir' é clicado) ---
+  if (data.protocolo === "ESTORNO") {
+    // Procura de baixo para cima a última linha desse aluno e apaga
+    for (let i = values.length - 1; i >= 1; i--) {
+      if (values[i][0] == data.nome && values[i][2] == data.matricula) {
+        sheet.deleteRow(i + 1);
+        return ContentService.createTextOutput("Sucesso: Registro Removido");
+      }
+    }
+    return ContentService.createTextOutput("Erro: Nenhum registro encontrado para excluir");
+  }
+
+  // --- OPÇÃO 2: ACRESCENTAR (Quando você faz um registro normal) ---
+  sheet.appendRow([
+    data.nome, 
+    data.periodo, 
+    data.matricula, 
+    data.data, 
+    data.protocolo, 
+    data.observacao
+  ]);
+  
+  return ContentService.createTextOutput("Sucesso: Registro Adicionado");
+}
+
+function doGet() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Ocorrencias");
+  const data = sheet.getDataRange().getValues();
+  const head = data.shift();
+  const json = data.map(r => {
+    let obj = {};
+    head.forEach((h, i) => obj[h] = r[i]);
+    return obj;
+  });
+  return ContentService.createTextOutput(JSON.stringify(json)).setMimeType(ContentService.MimeType.JSON);
+}"; 
     const TOKEN_SEGURANCA = "SuaSenhaSecreta123";
 
+    let alunosBase = JSON.parse(localStorage.getItem('base_alunos')) || [];
+    let ocorrencias = [];
+    let selecionado = null;
+
+    // 1. Autenticação
     function autenticar() {
         const u = document.getElementById('user').value.trim();
         const s = document.getElementById('pass').value.trim();
@@ -109,125 +175,139 @@
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
             carregarDados();
-        } else { document.getElementById('login-error').style.display = 'block'; }
+        } else {
+            document.getElementById('login-error').style.display = 'block';
+        }
     }
 
-    let alunosBase = JSON.parse(localStorage.getItem('base_alunos')) || [];
-    let ocorrencias = [];
-    let selecionado = null;
+    // 2. Busca e Filtro
+    function filtrarAlunos(t) {
+        const lista = document.getElementById('lista-sugestoes');
+        if (t.length < 2) { lista.style.display = 'none'; return; }
+        
+        const f = alunosBase.filter(a => a.nome && a.nome.toLowerCase().includes(t.toLowerCase())).slice(0, 5);
+        
+        if(f.length > 0) {
+            lista.innerHTML = f.map(a => `<div class="item-sugestao" onclick="selecionarAluno('${a.nome}', '${a.periodo}', '${a.matricula}')">${a.nome} (${a.matricula})</div>`).join('');
+            lista.style.display = 'block';
+        } else {
+            lista.style.display = 'none';
+        }
+    }
 
+    function selecionarAluno(n, p, m) {
+        selecionado = { nome: n, periodo: p, matricula: m };
+        document.getElementById('txt-nome').innerText = n;
+        document.getElementById('txt-mat').innerText = m;
+        document.getElementById('txt-per').innerText = p;
+        document.getElementById('info-selecionado').style.display = 'block';
+        document.getElementById('lista-sugestoes').style.display = 'none';
+        document.getElementById('inputBusca').value = n;
+    }
+
+    // 3. Comunicação com a Nuvem (SALVAR)
+    async function registrarOcorrencia() {
+        const btn = document.getElementById('btn-salvar');
+        const protocolo = document.getElementById('campo-protocolo').value;
+        
+        if(!protocolo) { alert("Informe o protocolo!"); return; }
+
+        const payload = { 
+            token: TOKEN_SEGURANCA,
+            nome: selecionado.nome, 
+            periodo: selecionado.periodo, 
+            matricula: selecionado.matricula, 
+            data: new Date().toLocaleString('pt-BR'), 
+            protocolo: protocolo, 
+            observacao: document.getElementById('campo-obs').value 
+        };
+
+        btn.disabled = true;
+        btn.innerText = "Enviando...";
+
+        try {
+            await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
+            alert("Registrado com sucesso!");
+            location.reload();
+        } catch (e) {
+            alert("Erro ao salvar dados.");
+            btn.disabled = false;
+            btn.innerText = "Confirmar Registro";
+        }
+    }
+
+    // 4. Comunicação com a Nuvem (REDUZIR/DELETAR) - LÓGICA CORRIGIDA
+    async function reduzirOcorrencia(nome, matricula) {
+        if (!confirm(`Deseja EXCLUIR permanentemente o último registro de ${nome} na planilha?`)) return;
+        
+        const payload = { 
+            token: TOKEN_SEGURANCA,
+            nome: nome, 
+            matricula: matricula, 
+            protocolo: "ESTORNO" // O Script vai entender isso como comando para DELETAR
+        };
+
+        try {
+            const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
+            const text = await res.text();
+            if(text.includes("Sucesso")) {
+                alert("Registro removido!");
+                location.reload();
+            } else { alert("Erro: " + text); }
+        } catch (e) { alert("Erro na conexão."); }
+    }
+
+    // 5. Carregar e Renderizar
     async function carregarDados() {
         try {
             const res = await fetch(URL_API);
             ocorrencias = await res.json();
-            renderDashboard();
-        } catch (e) { console.error(e); }
+            renderizarDashboard();
+        } catch (e) {
+            document.getElementById('corpo-tabela').innerHTML = '<tr><td colspan="5" style="color:red">Erro ao conectar com a planilha.</td></tr>';
+        }
     }
 
-    function filtrarAlunos(t) {
-        const lista = document.getElementById('lista-sugestoes');
-        if (t.length < 2) { lista.style.display = 'none'; return; }
-        const f = alunosBase.filter(a => a.nome && a.nome.toLowerCase().includes(t.toLowerCase())).slice(0, 5);
-        lista.innerHTML = f.map(a => `<div class="item-sugestao" onclick="selecionar('${a.nome}', '${a.periodo}', '${a.matricula}')">${a.nome}</div>`).join('');
-        lista.style.display = 'block';
-    }
-
-    function selecionar(n, p, m) {
-        selecionado = { nome: n, periodo: p, matricula: m };
-        document.getElementById('txt-nome').innerText = n;
-        document.getElementById('txt-mat').innerText = m;
-        document.getElementById('info-selecionado').style.display = 'block';
-        document.getElementById('lista-sugestoes').style.display = 'none';
-    }
-
-    async function registrarOcorrencia() {
-        const btn = document.getElementById('btn-salvar');
-        const payload = { 
-            token: TOKEN_SEGURANCA,
-            nome: selecionado.nome, periodo: selecionado.periodo, matricula: selecionado.matricula, 
-            data: new Date().toLocaleString('pt-BR'), 
-            protocolo: document.getElementById('campo-protocolo').value, 
-            observacao: document.getElementById('campo-obs').value 
-        };
-        btn.disabled = true;
-        try {
-            await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
-            location.reload();
-        } catch (e) { alert("Erro ao salvar."); btn.disabled = false; }
-    }
-
-    async function reduzirOcorrencia(nome, periodo, matricula) {
-        if (!confirm(`Reduzir 1 esquecimento para ${nome}?`)) return;
-        const payload = { 
-            token: TOKEN_SEGURANCA,
-            nome: nome, periodo: periodo, matricula: matricula, 
-            data: new Date().toLocaleString('pt-BR'), 
-            protocolo: "ESTORNO", 
-            observacao: "REDUCAO: Ajuste de saldo efetuado." 
-        };
-        try {
-            await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
-            location.reload();
-        } catch (e) { alert("Erro ao processar redução."); }
-    }
-
-    function limparChave(str) {
-        return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-    }
-
-    function renderDashboard() {
+    function renderizarDashboard() {
         const corpo = document.getElementById('corpo-tabela');
         corpo.innerHTML = '';
         
-        if (!ocorrencias || ocorrencias.length === 0) {
-            corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum registro encontrado.</td></tr>';
-            return;
-        }
-
-        const contagem = {};
+        const consolidado = {};
 
         ocorrencias.forEach(o => {
-            let objLimpo = {};
-            Object.keys(o).forEach(key => { objLimpo[limparChave(key)] = o[key]; });
+            // Normaliza as chaves da planilha para minúsculo
+            let item = {};
+            Object.keys(o).forEach(k => item[k.toLowerCase()] = o[k]);
 
-            const nome = objLimpo.nome;
-            if (!nome) return;
-
-            const id = objLimpo.matricula || nome;
-            if (!contagem[id]) {
-                contagem[id] = { nome: nome, per: objLimpo.periodo || "?", mat: objLimpo.matricula || "", total: 0 };
+            const id = item.matricula || item.nome;
+            if (!consolidado[id]) {
+                consolidado[id] = { nome: item.nome, per: item.periodo, mat: item.matricula, total: 0 };
             }
-            
-            // Lógica Corrigida: Normaliza a observação para detectar "REDUCAO" sem falhas
-            const obsNormalizada = String(objLimpo.observacao || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            
-            if (obsNormalizada.includes("REDUCAO")) {
-                contagem[id].total -= 1; // Subtrai o registro
-            } else {
-                contagem[id].total += 1; // Soma o registro
-            }
+            consolidado[id].total += 1;
         });
 
-        let temAlunos = false;
-        Object.values(contagem).forEach(d => {
+        let totalVisivel = 0;
+        Object.values(consolidado).forEach(d => {
             if (d.total > 0) {
-                temAlunos = true;
-                const isCrit = d.total >= 3;
+                totalVisivel++;
+                const critico = d.total >= 3;
                 corpo.innerHTML += `<tr>
-                    <td>${d.nome}</td><td>${d.per}º</td><td>${d.total}</td>
-                    <td><span class="status-badge ${isCrit?'critical':''}">${isCrit?'ADVERTÊNCIA':'Normal'}</span></td>
+                    <td>${d.nome}</td>
+                    <td>${d.per}º</td>
+                    <td><strong>${d.total}</strong></td>
+                    <td><span class="status-badge ${critico?'critical':''}">${critico?'ADVERTÊNCIA':'Normal'}</span></td>
                     <td>
-                        <button class="btn btn-reduce" onclick="reduzirOcorrencia('${d.nome}', '${d.per}', '${d.mat}')">➖ Reduzir</button>
-                        ${isCrit ? `<button class="btn btn-print" onclick="imprimirDoc('${d.nome}', '${d.per}')">🖨️</button>` : ''}
+                        <button class="btn btn-reduce" onclick="reduzirOcorrencia('${d.nome}', '${d.mat}')">➖ Reduzir</button>
+                        ${critico ? `<button class="btn btn-print" onclick="prepararImpressao('${d.nome}', '${d.per}')">🖨️</button>` : ''}
                     </td>
                 </tr>`;
             }
         });
 
-        if (!temAlunos) corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Todos os saldos estão zerados.</td></tr>';
+        if (totalVisivel === 0) corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum esquecimento registrado.</td></tr>';
     }
 
-    function imprimirDoc(n, p) {
+    function prepararImpressao(n, p) {
         document.getElementById('p-nome').innerText = n;
         document.getElementById('p-periodo').innerText = p;
         document.getElementById('p-data').innerText = new Date().toLocaleDateString('pt-BR');
@@ -241,15 +321,16 @@
             const wb = XLSX.read(data, {type: 'array'});
             const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
             alunosBase = json.map(i => ({ 
-                nome: i.Nome || i.NOME || i.nome, 
-                matricula: i.Matrícula || i.MATRICULA || i.matricula, 
-                periodo: i.Período || i.PERIODO || i.periodo 
+                nome: i.Nome || i.NOME, 
+                matricula: i.Matrícula || i.MATRICULA, 
+                periodo: i.Período || i.PERIODO 
             }));
             localStorage.setItem('base_alunos', JSON.stringify(alunosBase));
-            alert("Base de alunos importada com sucesso!");
+            alert("Lista de alunos carregada com sucesso!");
         };
         reader.readAsArrayBuffer(event.target.files[0]);
     }
 </script>
+
 </body>
 </html>
