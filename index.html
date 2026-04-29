@@ -17,7 +17,6 @@
         .btn-import { background: #8e44ad; margin-bottom: 10px; }
         .btn-reg { background: var(--success); width: 100%; margin-top: 15px; }
         .btn-reduce { background: var(--warning); font-size: 11px; padding: 5px 10px; color: #fff; }
-        .btn-print { background: var(--primary); font-size: 11px; padding: 5px 10px; margin-left: 5px; }
         input, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; margin-top: 5px; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
@@ -26,8 +25,6 @@
         #lista-sugestoes { border: 1px solid #ddd; border-top: none; max-height: 200px; overflow-y: auto; display: none; background: white; position: absolute; z-index: 100; width: calc(100% - 40px); max-width: 960px; }
         .item-sugestao { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; }
         .item-sugestao:hover { background: #f8f9fa; }
-        @media print { body * { visibility: hidden; } #area-impressao, #area-impressao * { visibility: visible; } #area-impressao { position: absolute; left: 0; top: 0; width: 100%; display: block !important; } }
-        #area-impressao { display: none; }
     </style>
 </head>
 <body>
@@ -81,25 +78,10 @@
     </div>
 </div>
 
-<div id="area-impressao">
-    <div style="padding: 50px; border: 2px solid black;">
-        <h1 style="text-align:center;">ADVERTÊNCIA DISCIPLINAR</h1>
-        <p style="margin-top:40px;">Comunicamos que o(a) estudante <strong><span id="p-nome"></span></strong>, do <strong><span id="p-periodo"></span>º Período</strong>, atingiu o limite de 3 liberações excepcionais.</p>
-        <p>Data: <span id="p-data"></span></p>
-        <br><br><br>
-        <div style="display:flex; justify-content:space-around;">
-            <div style="border-top: 1px solid black; width: 200px; text-align:center;">Assinatura Estudante</div>
-            <div style="border-top: 1px solid black; width: 200px; text-align:center;">Coordenação</div>
-        </div>
-    </div>
-</div>
-
 <script>
     const users = { "Diana": "246811", "Claus": "Cl@86372" };
     
-    // --- COLE SUA URL ABAIXO ---
     const URL_API = "https://script.google.com/macros/s/AKfycbx3jT4lZM85c43QTUQ-Jee9rRuTwmVgB6RIIMBvV3iCZUe8BFyrA3wTcty2WwIqwz9olg/exec";
-    
     const TOKEN_SEGURANCA = "SuaSenhaSecreta123";
 
     let alunosBase = JSON.parse(localStorage.getItem('base_alunos')) || [];
@@ -181,13 +163,11 @@
 
         ocorrencias.forEach(o => {
             let item = {};
-            // Normalização agressiva: remove acentos, espaços e deixa tudo minúsculo
             Object.keys(o).forEach(k => {
                 let chaveLimpa = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
                 item[chaveLimpa] = o[k];
             });
 
-            // Tenta encontrar o período procurando por chaves que comecem com "per"
             let periodoFinal = "0";
             for(let key in item) {
                 if(key.startsWith("per")) { periodoFinal = item[key]; break; }
@@ -214,19 +194,11 @@
                     <td><span class="status-badge ${critico?'critical':''}">${critico?'ADVERTÊNCIA':'Normal'}</span></td>
                     <td>
                         <button class="btn btn-reduce" onclick="reduzirOcorrencia('${d.nome}', '${d.mat}')">➖ Reduzir</button>
-                        ${critico ? `<button class="btn btn-print" onclick="prepararImpressao('${d.nome}', '${d.per}')">🖨️</button>` : ''}
                     </td>
                 </tr>`;
             }
         });
         if (totalVisivel === 0) corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum registro.</td></tr>';
-    }
-
-    function prepararImpressao(n, p) {
-        document.getElementById('p-nome').innerText = n;
-        document.getElementById('p-periodo').innerText = p;
-        document.getElementById('p-data').innerText = new Date().toLocaleDateString('pt-BR');
-        window.print();
     }
 
     function importarPlanilha(event) {
@@ -236,7 +208,6 @@
             const wb = XLSX.read(data, {type: 'array'});
             const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
             alunosBase = json.map(i => {
-                // Normaliza também na importação
                 let temp = {};
                 Object.keys(i).forEach(k => {
                    let c = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
