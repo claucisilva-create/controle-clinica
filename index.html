@@ -25,6 +25,7 @@
         #lista-sugestoes { border: 1px solid #ddd; border-top: none; max-height: 200px; overflow-y: auto; display: none; background: white; position: absolute; z-index: 100; width: calc(100% - 40px); max-width: 960px; }
         .item-sugestao { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; }
         .item-sugestao:hover { background: #f8f9fa; }
+        label { display: block; margin-top: 10px; font-weight: bold; color: var(--primary); font-size: 14px; }
     </style>
 </head>
 <body>
@@ -50,11 +51,20 @@
         <h3>Registrar Novo Esquecimento</h3>
         <input type="text" id="inputBusca" placeholder="Digite o nome do aluno..." onkeyup="filtrarAlunos(this.value)">
         <div id="lista-sugestoes"></div>
+        
         <div id="info-selecionado" style="display:none; margin-top:15px; padding:20px; background:#eef2f7; border-radius: 8px; border-left: 5px solid var(--info);">
             <strong>Estudante:</strong> <span id="txt-nome"></span><br>
             <strong>Matrícula:</strong> <span id="txt-mat"></span> | <strong>Período:</strong> <span id="txt-per"></span>º<br>
-            <input type="text" id="campo-protocolo" placeholder="Número do Protocolo">
-            <textarea id="campo-obs" rows="2" placeholder="Observações (opcional)"></textarea>
+            
+            <label>Número do Protocolo:</label>
+            <input type="text" id="campo-protocolo" placeholder="Ex: 123456">
+            
+            <label>Data de liberação do protocolo:</label>
+            <input type="date" id="data-protocolo">
+            
+            <label>Observações (opcional):</label>
+            <textarea id="campo-obs" rows="2" placeholder="Digite aqui..."></textarea>
+            
             <button class="btn btn-reg" id="btn-salvar" onclick="registrarOcorrencia()">Confirmar Registro</button>
         </div>
     </div>
@@ -81,6 +91,7 @@
 <script>
     const users = { "Diana": "246811", "Claus": "Cl@86372" };
     
+    // Substitua pela sua URL real do Google Apps Script
     const URL_API = "https://script.google.com/macros/s/AKfycbx3jT4lZM85c43QTUQ-Jee9rRuTwmVgB6RIIMBvV3iCZUe8BFyrA3wTcty2WwIqwz9olg/exec";
     const TOKEN_SEGURANCA = "SuaSenhaSecreta123";
 
@@ -116,24 +127,44 @@
         document.getElementById('info-selecionado').style.display = 'block';
         document.getElementById('lista-sugestoes').style.display = 'none';
         document.getElementById('inputBusca').value = n;
+        
+        // Define a data de hoje como padrão no campo de data ao selecionar
+        const hoje = new Date().toISOString().split('T')[0];
+        document.getElementById('data-protocolo').value = hoje;
     }
 
     async function registrarOcorrencia() {
         const btn = document.getElementById('btn-salvar');
         const prot = document.getElementById('campo-protocolo').value;
-        if(!prot) { alert("Informe o protocolo!"); return; }
+        const dataManual = document.getElementById('data-protocolo').value;
+        
+        if(!prot || !dataManual) { alert("Informe o protocolo e a data!"); return; }
+
+        // Formata a data e hora: DD/MM/AAAA, HH:MM:SS
+        const partesData = dataManual.split('-');
+        const dataFormatada = `${partesData[2]}/${partesData[1]}/${partesData[0]}`;
+        const horaAtual = new Date().toLocaleTimeString('pt-BR');
+        const dataHoraCompleta = `${dataFormatada}, ${horaAtual}`;
+
         const payload = { 
             token: TOKEN_SEGURANCA,
-            nome: selecionado.nome, periodo: selecionado.periodo, matricula: selecionado.matricula, 
-            data: new Date().toLocaleString('pt-BR'), protocolo: prot, 
+            nome: selecionado.nome, 
+            periodo: selecionado.periodo, 
+            matricula: selecionado.matricula, 
+            data: dataHoraCompleta, // Enviando a nova data formatada
+            protocolo: prot, 
             observacao: document.getElementById('campo-obs').value 
         };
+
         btn.disabled = true;
         try {
             await fetch(URL_API, { method: 'POST', body: JSON.stringify(payload) });
-            alert("Salvo!");
+            alert("Salvo com sucesso!");
             location.reload();
-        } catch (e) { alert("Erro ao salvar."); btn.disabled = false; }
+        } catch (e) { 
+            alert("Erro ao salvar."); 
+            btn.disabled = false; 
+        }
     }
 
     async function reduzirOcorrencia(nome, matricula) {
